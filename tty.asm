@@ -17,7 +17,7 @@ set_char_attr:
 print_ok:
 	pusha
 
-	mov ah, byte [char_attr]
+	mov ah, byte [char_attr]	;Save over current char_attr
 
 	mov al, 0x07				;Go grey on black
 	call set_char_attr
@@ -35,7 +35,7 @@ print_ok:
 	mov al, ']'
 	call cprint
 
-	mov al, ah
+	mov al, ah					;Set back to old char_attr
 	call set_char_attr
 
 	popa

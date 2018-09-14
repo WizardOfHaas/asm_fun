@@ -5,6 +5,60 @@ db 'tty.asm'
 tty_buffer: times 80*26*2 db 0 ;TTY text memory buffer
 xpos: db 0
 ypos: db 0
+char_attr: db 0x07
+
+;Set character attribute byte
+;	AL - new char attribute
+set_char_attr:
+	mov byte [char_attr], al
+	ret
+
+;Print [  OK  ] message
+print_ok:
+	pusha
+
+	mov ah, byte [char_attr]
+
+	mov al, 0x07				;Go grey on black
+	call set_char_attr
+
+	mov al, '['
+	call cprint
+
+	mov al, 0x02				;Set green on black
+	mov si, .ok
+	call attr_sprint
+
+	mov al, 0x07
+	call set_char_attr
+
+	mov al, ']'
+	call cprint
+
+	mov al, ah
+	call set_char_attr
+
+	popa
+	ret
+
+	.ok db '   OK   ',0
+
+;Print string with given attr
+;	SI - string
+;	AL - attribute
+attr_sprint:
+	pusha
+
+	mov ah, byte [char_attr]
+	call set_char_attr
+
+	call sprint
+
+	mov al, ah
+	call set_char_attr
+
+	popa
+	ret
 
 ;Print an integer to the screen in dec
 ;	AX - integer to print
@@ -66,7 +120,7 @@ cprint:
 
 	;Setup char and attributes to write
  	pop ax					;Retrive char value
- 	mov ah, 0x02			;Set char attribute
+ 	mov ah, byte [char_attr];Set char attribute
 	
  	cmp al, 10
  	je .nl

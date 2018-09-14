@@ -15,9 +15,15 @@ start:
  	mov si, boot_msg
  	call sprint
 
+ 	mov si, mm_msg
+ 	call sprint
+ 	call init_mm
+ 	call print_ok
+
 	jmp end
 
-boot_msg: db 'Booting up...', 10, 0
+boot_msg: 		db 'Booting up...', 10, 0
+mm_msg:			db 'Init memory manager...', 10, 0
 
 %include "tty.asm"
 %include "mem.asm"

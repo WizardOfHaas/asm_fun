@@ -2,15 +2,49 @@
 
 db 'mem.asm'
 
+free_msg:		db ' bytes free', 10, 0
+
+struc ll_node
+    .size: 		resw	1
+    .address:	resw	1
+    .next: 		resw 	1
+    .prev:		resw 	1
+endstruc
+
+free_mem: dw 0
+used_mem: dw 0
+
 total_mem: db 0, 0
 
-initmm:
+init_mm:
 	pusha
 
 	;Get and store memory size
 	clc
 	int 0x12
 	mov word [total_mem], ax
+
+	;Make start of free_mem linked lists
+	mov si, start_free_mem
+	mov word [si + ll_node.prev], 0
+	mov word [si + ll_node.next], 0
+	mov word [si + ll_node.address], start_free_mem
+
+	mov ax, start_free_mem
+	call iprint
+	call new_line
+
+	;Calculate size of free memory
+	mov ax, word[total_mem]
+	mov bx, 1024
+	mul bx
+	sub ax, start_free_mem
+	mov word [si + ll_node.size], ax
+
+	call iprint
+
+	mov si, free_msg
+	call sprint
 
 	popa
 	ret
@@ -63,6 +97,14 @@ memset:
 	popa
 	ret
 
+add_to_ll:
+	ret
+
+remove_from_ll:
+	ret
+
 malloc:
+	ret
 
 free:
+	ret

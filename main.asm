@@ -12,11 +12,12 @@ start:
  	call cursor_on
  	call clear_screen
 
- 	call print_regs
+ 	mov si, boot_msg
+ 	call sprint
 
 	jmp end
 
-hello: db 'test', 10, 0
+boot_msg: db 'Booting up...', 10, 0
 
 %include "tty.asm"
 %include "mem.asm"

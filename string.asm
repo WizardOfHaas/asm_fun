@@ -108,10 +108,30 @@ atoi:
 	.multiplier	dw 0
 	.tmp		dw 0
 
-strcmp:
+;Get length of string
+;	SI - string
+;	AX - length of string
+strlen:
+	pusha
+
+	xor ax, ax
+.loop:
+	cmp byte [si], 0
+	je .done
+
+	inc si
+	inc ax
+	jmp .loop
+
+.done:
+	mov [.tmp], ax
+	popa
+	mov ax, [.tmp]
 	ret
 
-strlen:
+	.tmp: dw 0
+
+strcmp:
 	ret
 
 strcpy:

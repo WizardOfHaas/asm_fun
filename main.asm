@@ -20,12 +20,14 @@ start:
  	call init_mm
  	call print_ok
 
- 	call print_regs
+ 	mov si, word [free_mem_ll]
+ 	mov ax, 128
+ 	call dump_mem
 
 	jmp end
 
 boot_msg: 		db 'Booting up...', 10, 0
-mm_msg:			db 'Init memory manager...', 10, 0
+mm_msg:			db 'Init memory manager...   ', 0
 
 %include "tty.asm"
 %include "mem.asm"

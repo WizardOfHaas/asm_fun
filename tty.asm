@@ -38,6 +38,8 @@ print_ok:
 	mov al, ah					;Set back to old char_attr
 	call set_char_attr
 
+	call new_line
+
 	popa
 	ret
 
@@ -71,9 +73,25 @@ iprint:
 	popa
 	ret
 
-;Print an integer to the screen in hex
+;Print an integer to the screen in hex (word)
 ;	AX - integer to print
 hprint:
+	pusha
+
+	mov bx, ax
+
+	mov al, bh 
+	call hprint_byte
+
+	mov al, bl
+	call hprint_byte
+
+	popa
+	ret
+
+;Print an integer to the screen in hex (byte_)
+;	AL - integer to print
+hprint_byte:
 	pusha
 
 	call htoa
@@ -292,10 +310,7 @@ print_regs:
 
 	inc cx				;Inc for next loop
 
-	pop bx				;Grab register from stack
-	mov al, bh			;Do higher byte
-	call hprint
-	mov al, bl			;Do lower bytes
+	pop ax				;Grab register from stack
 	call hprint
 
 	cmp cx, 6			;Loop until we print out all registers

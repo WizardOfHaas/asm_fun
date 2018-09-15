@@ -20,6 +20,8 @@ start:
  	call init_mm
  	call print_ok
 
+ 	call print_regs
+
 	jmp end
 
 boot_msg: 		db 'Booting up...', 10, 0

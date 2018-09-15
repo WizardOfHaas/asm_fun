@@ -49,6 +49,18 @@ init_mm:
 	popa
 	ret
 
+;Dump chumk of memory to screen
+;	SI - location to dump
+;	AX - number of bytes to display
+dump_mem:
+	pusha
+
+.loop:
+	
+
+	popa
+	ret
+
 ;Copy chunk of memory to new location
 ;	ES:SI - source data to copy from
 ;	FS:DI - destination to copy to

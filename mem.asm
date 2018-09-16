@@ -73,19 +73,27 @@ malloc:
 
 	mov si, [free_mem_ll]
 .next_node:
-	cmp word [si + ll_node.size], ax
+	mov word [.curr_block], si			;Keep track of current block
+	cmp word [si + ll_node.size], ax	;Do we have the size chunk caller wants?
+	je .done
 
 	cmp word [si + ll_node.next], 0		;Check if we have reached the end of the list
 	jne .next_node
+
+	mov si, word [si + ll_node.next]	;Go to next list node
+
 	jmp .done
 
 .make_block:
 
 .done:
 	popa
+
+	mov si, word [.curr_block]			;Return current block
 	ret
 
 	.largest_block dw 0
+	.curr_block dw 0
 
 ;Free memory
 free:

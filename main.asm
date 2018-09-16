@@ -21,8 +21,12 @@ start:
  	call print_ok
 
  	mov si, word [free_mem_ll]
- 	mov ax, 128
+ 	mov ax, 16
  	call dump_mem
+
+	mov si, start
+	sub si, 16
+	call dump_mem
 
 	jmp end
 

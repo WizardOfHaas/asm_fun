@@ -29,18 +29,30 @@ init_mm:
 	;Initialize linked list struct for free mem
 	;Calculate size of free memory
 	mov ax, word [total_mem]		;Get total RAM size
-	mov bx, 1024					;|kb -> b
-	mul bx							;|
+	mov bx, 1024				;|kb -> b
+	mul bx					;|
 	sub ax, start_free_mem			;Subtract off end of kernal
 	
 	mov si, start_free_mem			;Make start of free_mem linked lists
 	mov [free_mem_ll], si			;Save over location of free mem ll
 
-	mov di, si						;Address size of first element, directly after ll struct
+	mov di, si				;Address size of first element, directly after ll struct
 	add di, 8
 
-	call init_ll 					;Initialize linked list
+	call init_ll 				;Initialize linked list
 
+	;Initialize linked list struct for used mem
+	;Calculate used mem size
+	mov ax, word [end]
+	sub ax, 0x100
+
+	mov si, start				;Place used mem node right before start of kernel
+	sub si, 16
+	mov [used_mem_ll], si			;Save location of start of used mem list
+	mov di, 0x100				;Addresses to start of kernel
+
+	call init_ll
+	
 	popa
 	ret
 
@@ -73,7 +85,7 @@ malloc:
 
 	mov si, [free_mem_ll]
 .next_node:
-	mov word [.curr_block], si			;Keep track of current block
+	mov word [.curr_block], si		;Keep track of current block
 	cmp word [si + ll_node.size], ax	;Do we have the size chunk caller wants?
 	je .done
 
@@ -108,7 +120,7 @@ dump_mem:
 	mov cx, ax				;Get iterater loaded
 	mov ax, 16				;Do 16 byte lines
 .loop:
-	call dump_mem_line 		;Do one line
+	call dump_mem_line 			;Do one line
 	call new_line
 
 	;Update iterators, addresses

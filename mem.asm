@@ -71,12 +71,52 @@ init_ll:
 	popa
 	ret
 
+;Get last node of linked list
+;	SI - location of first node of linked list
+last_node_ll:
+.loop:
+	cmp word [si + ll_node.next], 0
+	je .done	
+
+	add si, 8
+	jmp .loop
+.done:
+	ret
+
 ;Add to linked list struct
+;	SI - location of start of linked list
+;	DI - address of node to add
 add_to_ll:
+	pusha
+
+	call last_node_ll
+	mov word [si + ll_node.next], di	
+
+	popa	
 	ret
 
 ;Remove from linked list struct
+;	SI - address of list member to remove
 remove_from_ll:
+	pusha
+
+	mov ax, word [si + ll_node.prev]		;Get location of previous node
+	mov bx, word [si + ll_node.next]		;Get location of next node
+
+	;Set adjacent nodes to now point to eachother
+	mov di, ax
+	cmp di, 0
+	je .next
+	mov [di + ll_node.next], bx
+
+.next:
+	mov di, bx
+	cmp di, 0
+	je .done
+	mov [di + ll_node.prev], ax	
+
+.done:
+	popa
 	ret
 
 ;Allocate memory

@@ -20,27 +20,27 @@ start:
  	call init_mm
  	call print_ok
 
- 	mov cx, 2
+ 	mov cx, 10
 
 .loop:
-	mov ax, cx
+	mov ax, 16
 	call malloc
 
 	dec cx
 	cmp cx, 0
 	jne .loop
 
-;	mov si, word [used_mem_ll]
-;.mem_loop:
-;	mov ax, 16
-; 	call dump_mem
-;
-; 	cmp word [si + ll_node.next], 0
-; 	je end
-;
-; 	mov si, word [si + ll_node.next]
-;
-; 	jmp .mem_loop
+	mov si, word [used_mem_ll]
+.mem_loop:
+	mov ax, 16
+ 	call dump_mem
+
+ 	cmp word [si + ll_node.next], 0
+ 	je end
+
+ 	mov si, word [si + ll_node.next]
+
+ 	jmp .mem_loop
 
 	jmp end
 
@@ -48,9 +48,9 @@ boot_msg: 		db 'Booting up...', 10, 0
 panic_msg:		db 'Kernel Panic!', 10, 0
 mm_msg:			db 'Init memory manager...   ', 0
 
-%include "tty.asm"
 %include "mem.asm"
 %include "string.asm"
+%include "tty.asm"
 
 kernel_panic:
 	mov si, panic_msg

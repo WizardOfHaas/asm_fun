@@ -78,20 +78,20 @@ last_node_ll:
 	cmp word [si + ll_node.next], 0
 	je .done	
 
-	add si, 8
+	mov si, word [si + ll_node.next]
 	jmp .loop
 .done:
 	ret
 
-;Add to linked list struct
+;Add node to linked list struct
 ;	SI - location of start of linked list
 ;	DI - address of node to add
 add_to_ll:
 	pusha
 
-	call last_node_ll
-	mov word [si + ll_node.next], di
-	mov word [di + ll_node.prev], si
+	call last_node_ll 					;Get to end of list (in SI)
+	mov word [si + ll_node.next], di	;Set new node as next node
+	mov word [di + ll_node.prev], si	;Set new node's prev to old last node
 
 	popa	
 	ret
@@ -160,6 +160,8 @@ malloc:
 	cmp ax, cx
 	jl kernel_panic
 
+	sub word [si + ll_node.size], ax	;Shrink block we are chopping
+
 	sub di, ax							;Make space to allcoate new block
 	mov word [.curr_block], di			;Save over lcoation of new node
 
@@ -175,13 +177,8 @@ malloc:
 
 	call add_to_ll 						;Add to used_mem_ll
 
-	call print_regs
-	mov si, word [.curr_block]			;Make sure to get out of the edge case
-	push ax
-	mov ax, 16
-	call dump_mem
-	pop ax
-
+	mov si, word [.curr_block]			;Make sure to get out of the edge case catch
+	
 .done:
 	cmp si, word [free_mem_ll]			;Check we allocated something
 	je .make_block						;If not, we only have one block so split it up

@@ -47,7 +47,7 @@ init_mm:
 	sub ax, 0x100
 
 	mov si, start				;Place used mem node right before start of kernel
-	sub si, 16
+	sub si, 8
 	mov [used_mem_ll], si		;Save location of start of used mem list
 	mov di, 0x100				;Addresses to start of kernel
 
@@ -71,6 +71,24 @@ init_ll:
 	popa
 	ret
 
+print_ll:
+	pusha
+
+.mem_loop:
+	mov ax, 16
+ 	call dump_mem
+
+ 	cmp word [si + ll_node.next], 0
+ 	je .done
+
+ 	mov si, word [si + ll_node.next]
+
+ 	jmp .mem_loop
+
+.done:
+	popa
+	ret
+
 ;Get last node of linked list
 ;	SI - location of first node of linked list
 last_node_ll:
@@ -84,14 +102,17 @@ last_node_ll:
 	ret
 
 ;Add node to linked list struct
-;	SI - location of start of linked list
-;	DI - address of node to add
+;	DI - location of start of linked list
+;	SI - address of node to add
 add_to_ll:
 	pusha
 
+	xchg si, di
 	call last_node_ll 					;Get to end of list (in SI)
-	mov word [si + ll_node.next], di	;Set new node as next node
-	mov word [di + ll_node.prev], si	;Set new node's prev to old last node
+
+	xchg si, di
+	mov word [di + ll_node.next], si	;Set new node as next node
+	mov word [si + ll_node.prev], di	;Set new node's prev to old last node
 
 	popa	
 	ret
@@ -106,14 +127,14 @@ remove_from_ll:
 
 	;Set adjacent nodes to now point to eachother
 	mov di, ax
-	cmp di, 0
+	cmp di, 0								;Move on if there is no prev node
 	je .next
 	mov [di + ll_node.next], bx
 
 .next:
 	mov di, bx
 	cmp di, 0
-	je .done
+	je .done								;Move on if there is no next node
 	mov [di + ll_node.prev], ax	
 
 .done:
@@ -122,6 +143,8 @@ remove_from_ll:
 
 ;Allocate memory
 ;	AX - bytes to allocate
+;Returns
+;	SI - pointer to linked list struct describing allocated memory
 malloc:
 	pusha
 
@@ -133,16 +156,17 @@ malloc:
 	je .done
 
 	mov bx, word [.largest_block]
-	cmp word [si + ll_node.size], bx	;Do we have a new high score?
+	cmp word [si + ll_node.size], bx	;Do we have a new largest block of free mem?
 	jg .update_largest
 
+.check_done:
 	cmp word [si + ll_node.next], 0		;Check if we have reached the end of the list
-	je .done
+	je .make_block
 
 .next:
 	mov si, word [si + ll_node.next]	;Go to next list node
 
-	jmp .next_node
+	jmp .check_done
 
 .update_largest:
 	mov word [.largest_block], bx
@@ -173,12 +197,13 @@ malloc:
 	sub ax, 8							
 	mov word [di + ll_node.size], ax	;Set size attribute
 
-	mov si, word [used_mem_ll]			;Get start of used_mem_ll
+	mov si, di
+	mov di, word [used_mem_ll]			;Get start of used_mem_ll
 
 	call add_to_ll 						;Add to used_mem_ll
 
 	mov si, word [.curr_block]			;Make sure to get out of the edge case catch
-	
+
 .done:
 	cmp si, word [free_mem_ll]			;Check we allocated something
 	je .make_block						;If not, we only have one block so split it up
@@ -191,7 +216,20 @@ malloc:
 	.curr_block dw 0
 
 ;Free memory
+;	SI - ll node for malloc'd block
 free:
+	pusha
+
+	call remove_from_ll 				;Remove from current list
+
+	;Add to free mem list
+	mov di, word [free_mem_ll]			;Add to free mem list
+	call add_to_ll
+
+	mov ax, 16
+	;call dump_mem
+
+	popa
 	ret
 
 ;Dump chumk of memory to screen

@@ -8,8 +8,8 @@ free_msg:		db ' bytes free', 10, 0
 struc ll_node
     .address:	resw	1
     .size: 		resw	1
-    .next: 		resw 	1
     .prev:		resw 	1
+    .next: 		resw 	1
 endstruc
 
 free_mem_ll: dw 0
@@ -24,19 +24,19 @@ init_mm:
 	;Get lower memory size
 	clc
 	int 0x12
-	mov word [total_mem], ax		;Save over detected lower mem
+	mov word [total_mem], ax	;Save over detected lower mem
 
 	;Initialize linked list struct for free mem
 	;Calculate size of free memory
-	mov ax, word [total_mem]		;Get total RAM size
+	mov ax, word [total_mem]	;Get total RAM size
 	mov bx, 1024				;|kb -> b
-	mul bx					;|
-	sub ax, start_free_mem			;Subtract off end of kernal
+	mul bx						;|
+	sub ax, start_free_mem		;Subtract off end of kernal
 	
-	mov si, start_free_mem			;Make start of free_mem linked lists
-	mov [free_mem_ll], si			;Save over location of free mem ll
+	mov si, start_free_mem		;Make start of free_mem linked lists
+	mov [free_mem_ll], si		;Save over location of free mem ll
 
-	mov di, si				;Address size of first element, directly after ll struct
+	mov di, si					;Address size of first element, directly after ll struct
 	add di, 8
 
 	call init_ll 				;Initialize linked list
@@ -48,7 +48,7 @@ init_mm:
 
 	mov si, start				;Place used mem node right before start of kernel
 	sub si, 16
-	mov [used_mem_ll], si			;Save location of start of used mem list
+	mov [used_mem_ll], si		;Save location of start of used mem list
 	mov di, 0x100				;Addresses to start of kernel
 
 	call init_ll
@@ -90,7 +90,8 @@ add_to_ll:
 	pusha
 
 	call last_node_ll
-	mov word [si + ll_node.next], di	
+	mov word [si + ll_node.next], di
+	mov word [di + ll_node.prev], si
 
 	popa	
 	ret
@@ -120,25 +121,70 @@ remove_from_ll:
 	ret
 
 ;Allocate memory
+;	AX - bytes to allocate
 malloc:
 	pusha
 
 	mov si, [free_mem_ll]
+	mov word [.largest_block], si
 .next_node:
-	mov word [.curr_block], si		;Keep track of current block
+	mov word [.curr_block], si			;Keep track of current block
 	cmp word [si + ll_node.size], ax	;Do we have the size chunk caller wants?
 	je .done
 
-	cmp word [si + ll_node.next], 0		;Check if we have reached the end of the list
-	jne .next_node
+	mov bx, word [.largest_block]
+	cmp word [si + ll_node.size], bx	;Do we have a new high score?
+	jg .update_largest
 
+	cmp word [si + ll_node.next], 0		;Check if we have reached the end of the list
+	je .done
+
+.next:
 	mov si, word [si + ll_node.next]	;Go to next list node
 
-	jmp .done
+	jmp .next_node
 
+.update_largest:
+	mov word [.largest_block], bx
+	jmp .next
+
+	;Make a new block of needed size by carving largest free block
 .make_block:
+	mov si, word [.largest_block]		;Get largest block to slice
+	mov di, si							
+	add di, word [si + ll_node.size]	;Get to end of block
+	add ax, 8							;Calculate size of block to allocate + ll node
+
+	;Test if we have enough RAM, die otherwise
+	mov cx, word [si + ll_node.size]
+	cmp ax, cx
+	jl kernel_panic
+
+	sub di, ax							;Make space to allcoate new block
+	mov word [.curr_block], di			;Save over lcoation of new node
+
+	;Initialize new linked list node
+	mov bx, di
+	add bx, 8
+	mov word [di + ll_node.address], bx	;Set location of memory block
+
+	sub ax, 8							
+	mov word [di + ll_node.size], ax	;Set size attribute
+
+	mov si, word [used_mem_ll]			;Get start of used_mem_ll
+
+	call add_to_ll 						;Add to used_mem_ll
+
+	call print_regs
+	mov si, word [.curr_block]			;Make sure to get out of the edge case
+	push ax
+	mov ax, 16
+	call dump_mem
+	pop ax
 
 .done:
+	cmp si, word [free_mem_ll]			;Check we allocated something
+	je .make_block						;If not, we only have one block so split it up
 	popa
 
 	mov si, word [.curr_block]			;Return current block

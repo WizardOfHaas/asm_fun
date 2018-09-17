@@ -25,30 +25,28 @@ start:
  	call init_mm
  	call print_ok
 
- 	mov cx, 1
-.loop:
-	mov ax, cx
-	call malloc
-	call free
+	;Initialize and fill out IVT
+	mov si, ivt_msg
+	call sprint
+	call init_ivt
+	;call print_ok
 
-	mov di, word [si + ll_node.address]
-	mov word [di], cx
+	mov ax, 16
+	mov si, int_0
+	call dump_mem
 
-	inc cx
-	cmp cx, 10
-	jne .loop
-
-	mov si, word [free_mem_ll]
-	call print_ll
+	int 0x20
 
 	jmp end
 
 boot_msg: 		db 'Booting up...', 10, 0
 panic_msg:		db 'Kernel Panic!', 10, 0
 mm_msg:			db 'Init memory manager...   ', 0
+ivt_msg:		db 'Init IVT...              ', 0
 
 %include "mem.asm"
 %include "string.asm"
+%include "ivt.asm"
 %include "tty.asm"
 
 kernel_panic:
@@ -57,6 +55,7 @@ kernel_panic:
 	call attr_sprint
 
 end:
+	hlt
 	jmp end
 
 start_free_mem:

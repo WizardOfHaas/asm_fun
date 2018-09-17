@@ -233,7 +233,7 @@ free:
 	ret
 
 ;Dump chumk of memory to screen
-;	SI - location to dump
+;	ES:SI - location to dump
 ;	AX - number of bytes to display
 dump_mem:
 	pusha
@@ -261,13 +261,17 @@ dump_mem_line:
 	push ax					;Save for later
 
 	mov cx, ax				;Prepare iterator
+	mov ax, es
+	call hprint
+	mov al, ':'
+	call cprint
 	mov ax, si
 	call hprint				;Print address
 
 	mov al, '|'				
 	call cprint
 .hex_loop:					;Print out hex string of RAM
-	mov al, byte [si]
+	mov al, byte [es:si]
 	call hprint_byte
 	call advence_cursor
 
@@ -282,7 +286,7 @@ dump_mem_line:
 	pop cx
 	sub si, cx
 .chr_loop:					;Print out char string of RAM
-	mov al, byte[si]
+	mov al, byte[es:si]
 	call cprint
 
 	inc si

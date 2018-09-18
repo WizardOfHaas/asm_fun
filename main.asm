@@ -40,8 +40,9 @@ ivt_msg:		db 'Init IVT...              ', 0
 
 %include "mem.asm"
 %include "string.asm"
-%include "ivt.asm"
 %include "tty.asm"
+%include "keybd.asm"
+%include "ivt.asm"
 
 kernel_panic:
 	mov si, panic_msg
@@ -49,7 +50,8 @@ kernel_panic:
 	call attr_sprint
 
 end:
-	hlt
+	;cli
+	;hlt
 	jmp end
 
 start_free_mem:

@@ -7,10 +7,8 @@ init_ivt:
 	pusha
 	cli
 
-	xor di, di		;Point to start og IVT
-
 	mov ax, 0x09
-	mov si, master_isr
+	mov si, keybd_isr
 	call register_ivt
 
 	sti
@@ -19,7 +17,7 @@ init_ivt:
 
 ;Register IVT handler
 ;	SI - ISR address
-;	AX - IVT number
+;	AX - INT number to register
 register_ivt:
 	pusha
 	push es
@@ -38,6 +36,9 @@ register_ivt:
 	ret
 
 master_isr:
+	pushad
+	cld
+
 	push ax
 	mov si, .msg
 	call sprint
@@ -47,6 +48,7 @@ master_isr:
 	call new_line
 	call print_regs
 
+	popad
 	iret
 
 	.msg db 'INT 0x', 0

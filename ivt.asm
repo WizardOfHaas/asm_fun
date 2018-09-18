@@ -7,6 +7,7 @@ init_ivt:
 	pusha
 	cli
 
+	;Initialize keyboard handler
 	mov ax, 0x09
 	mov si, keybd_isr
 	call register_ivt

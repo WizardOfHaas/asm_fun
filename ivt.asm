@@ -2,15 +2,18 @@
 
 db 'ivt.asm'
 
+;Setup IVT
 init_ivt:
 	pusha
+	cli
 
 	xor di, di		;Point to start og IVT
 
-	mov ax, 0x20
-	mov si, int_0
+	mov ax, 0x09
+	mov si, master_isr
 	call register_ivt
 
+	sti
 	popa
 	ret
 
@@ -27,24 +30,23 @@ register_ivt:
 	mov bx, 4
 	mul bx
 	mov di, ax
-	mov word [di], si
-	mov word [di + 2], cs
-
-	call new_line
-	mov si, di
-	mov ax, 16
-	call dump_mem
+	mov word [es:di], si
+	mov word [es:di + 2], cs
 
 	pop es
 	popa
 	ret
 
-int_0:
+master_isr:
+	push ax
 	mov si, .msg
 	call sprint
+	pop ax
+	call hprint
 
+	call new_line
 	call print_regs
 
 	iret
 
-	.msg db 'INT 0', 10, 0
+	.msg db 'INT 0x', 0

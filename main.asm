@@ -1,4 +1,4 @@
-	org 100h	;Assemble as dos-style com file
+	org 100h		;Assemble as dos-style com file
 
 	jmp short start	;Jump to startup
 
@@ -29,13 +29,7 @@ start:
 	mov si, ivt_msg
 	call sprint
 	call init_ivt
-	;call print_ok
-
-	mov ax, 16
-	mov si, int_0
-	call dump_mem
-
-	int 0x20
+	call print_ok
 
 	jmp end
 

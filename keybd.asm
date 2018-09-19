@@ -51,7 +51,11 @@ keybd_isr:
 	;Are we shifted?
 	mov si, keylayoutlower 		;Get un-shifted scancode table
 
-	cmp byte [shift_state], 0
+	mov bl, byte [caps_lock]
+	mov bh, byte [shift_state]
+	xor bl, bh
+
+	cmp bl, 0
 	je .decode
 
 	mov si, keylayoutupper 		;Get shifter scancode table, if shifted

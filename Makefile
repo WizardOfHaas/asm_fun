@@ -2,6 +2,7 @@ main : main.asm
 	nasm main.asm -o startup.bin -Wall
 
 install : startup.bin
+	mkdir -p ./mnt
 	sudo mount boot.img ./mnt
 	sudo cp startup.bin ./mnt
 	sudo umount ./mnt

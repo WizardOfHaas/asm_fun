@@ -213,11 +213,6 @@ clear_keybd_buff:
 	mov fs, cx
 	mov bx, 0
 
-	push si
-	mov si, di
-	call dump_mem
-	pop si
-
 	call memset
 
 	sti

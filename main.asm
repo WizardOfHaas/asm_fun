@@ -61,8 +61,6 @@ keybd_test:
 	popa
 	ret
 
-	.msg db 'Keyboard Event Test', 10, 0
-
 kernel_panic:
 	mov si, panic_msg
 	mov al, 0x04

@@ -12,8 +12,10 @@ keylayoutupper:
 shift_state: db 0
 caps_lock: db 0
 
-keybd_buff: times 128 db 0	;Keyboard buffer
-keybd_buff_i: db 0				;Keyboard buffer index
+keybd_buff: times 256 db 0	;Keyboard buffer
+keybd_buff_i: db 0, 0				;Keyboard buffer index
+
+keybd_event_table: times 256 db 0
 
 keybd_isr:
 	pushad
@@ -198,4 +200,26 @@ remove_keybd_event:
 	popa
 	ret
 
-keybd_event_table: times 256 db 0
+clear_keybd_buff:
+	pusha
+	cli
+
+	mov word [keybd_buff_i], 0	;Reset buffer index
+
+	;Reset buffer to 0's
+	mov ax, 254
+	mov di, keybd_buff
+	mov cx, cs
+	mov fs, cx
+	mov bx, 0
+
+	push si
+	mov si, di
+	call dump_mem
+	pop si
+
+	call memset
+
+	sti
+	popa
+	ret

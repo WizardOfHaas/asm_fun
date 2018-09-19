@@ -32,11 +32,9 @@ start:
 	call print_ok
 
 	mov si, keybd_test
-	mov ax, 0x01
+	mov ax, 0x1C
 	call register_keybd_event
 	mov si, keybd_event_table
-	mov ax, 32
-	call dump_mem
 
 	jmp end
 
@@ -54,12 +52,11 @@ ivt_msg:		db 'Init IVT...              ', 0
 keybd_test:
 	pusha
 
-	mov si, .msg
+	mov si, keybd_buff
 	call sprint
+	call new_line
 
-	mov ax, 0x01
-	mov si, keybd_test
-	call remove_keybd_event
+	call clear_keybd_buff
 
 	popa
 	ret

@@ -31,6 +31,13 @@ start:
 	call init_ivt
 	call print_ok
 
+	mov si, keybd_test
+	mov ax, 0x01
+	call register_keybd_event
+	mov si, keybd_event_table
+	mov ax, 32
+	call dump_mem
+
 	jmp end
 
 boot_msg: 		db 'Booting up...', 10, 0
@@ -43,6 +50,21 @@ ivt_msg:		db 'Init IVT...              ', 0
 %include "tty.asm"
 %include "keybd.asm"
 %include "ivt.asm"
+
+keybd_test:
+	pusha
+
+	mov si, .msg
+	call sprint
+
+	mov ax, 0x01
+	mov si, keybd_test
+	call remove_keybd_event
+
+	popa
+	ret
+
+	.msg db 'Keyboard Event Test', 10, 0
 
 kernel_panic:
 	mov si, panic_msg

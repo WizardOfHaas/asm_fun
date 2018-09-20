@@ -51,9 +51,10 @@ start:
 	call register_event
 	mov si, keybd_event_table
 
-	mov es, 0x00
+	mov ax, 0x00
+	mov es, ax
 	mov si, 0x1000
-	mov ax, 256
+	mov ax, 32
 	call dump_mem
 
 	jmp end

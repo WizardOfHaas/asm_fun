@@ -16,7 +16,52 @@ init_flpy:
 
 	call flpy_init_dma
 
+	;Prep for read
+	call flpy_dma_read
+	mov al, 0xE6
+	call flpy_cmd
+
+	mov al, 0x00				;Head << 2
+	call flpy_cmd
+
+	mov al, 0x00				;Track
+	call flpy_cmd
+
+	mov al, 0x00				;Head
+	call flpy_cmd
+
+	mov al, 0x00				;Sector
+	call flpy_cmd
+
+	mov al, 0x00				;Somehting
+	call flpy_cmd
+
+.loop
+	cmp byte [flpy_ack], 0
+	je .loop
+
+	mov byte [flpy_ack], 0
+
 	popa
+	ret
+
+;Send command to floppy disk
+;	AL - command to send
+flpy_cmd:
+	push ax
+	;Wait for floppy to be ready
+.wait:
+	in al, 0x3F2
+	and al, 128
+	jz .wait
+
+	pop ax
+
+	out 0x3F5, al
+
+	call new_line
+	call print_regs
+
 	ret
 
 flpy_init_dma:
@@ -46,6 +91,21 @@ flpy_init_dma:
 
 	mov al, 0x02
 	out 0x0a, al				;unmask dma channel
+
+	popa
+	ret
+
+flpy_dma_read:
+	pusha
+
+	mov al, 0x06
+	out 0x0a, al	;mask dma channel 2
+
+	mov al, 0x56
+	out 0x0b, al 	;single transfer, address increment, autoinit, read, channel 2
+
+	mov al, 0x02
+	out 0x0a, al	;Unmask channel 2
 
 	popa
 	ret

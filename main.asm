@@ -51,6 +51,7 @@ start:
 	call register_event
 	mov si, keybd_event_table
 
+	mov es, 0x00
 	mov si, 0x1000
 	mov ax, 256
 	call dump_mem

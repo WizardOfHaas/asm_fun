@@ -22,19 +22,13 @@ init_flpy:
 flpy_init_dma:
 	pusha
 
-	mov ax, 64000
-	call malloc
-	mov si, [si + ll_node.address]
-
 	mov al, 0x06
 	out 0x0A, al				;mask dma channel
 
 	mov al, 0xFF
 	out 0xD8, al				;reset master flip-fl
 
-	sub si, 0x1000
-	call print_regs
-	mov ax, si
+	mov ax, 0x00				;Buffer at physical address 0x1000
 	out 0x04, al
 
 	mov al, 0x10

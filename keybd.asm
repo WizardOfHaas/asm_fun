@@ -36,6 +36,10 @@ keybd_isr:
 	pop ax						;Make sure AX just show AL data
 	mov ah, 0
 
+	;Check for and run any registered keybd events
+	mov si, keybd_event_table
+	call run_events
+
 	;Handle shift, capslock, meta-keys
 	cmp ax, 0x2A				;Left-shift down
 	je .shift_down
@@ -55,8 +59,6 @@ keybd_isr:
 
 	cmp ax, 0x81				;Do we have a key up scancode?
 	jge .key_up
-
-	call run_keyboard_events 	;Check for and run any registered keybd events
 
 	;Are we shifted?
 	mov si, keylayoutlower 		;Use un-shifted scancode table
@@ -115,91 +117,7 @@ keybd_isr:
 	popad
 	iret
 
-;Check for registered keyboard events and run them as needed
-;	AX - Scancode
-run_keyboard_events:
-	pusha
-
-	mov si, keybd_event_table 			;Start at first keybd event
-.loop:
-	mov bx, [si + 2]					;Do we have an event?
-	cmp bx, 0
-	je .next
-
-	cmp si, keybd_event_table + 256
-	je .done
-
-	cmp ax, [si]
-	je .exec
-
-.next:
-	add si, 4
-	jmp .loop
-
-.exec:
-	mov di, [si + 2]
-	call di
-	jmp .next
-
-.done:
-	popa
-	ret
-
-;Register a keyboard event to fire
-;	SI - Address of keyboard handler
-;	AX - Scancode to capture
-register_keybd_event:
-	pusha
-
-	push ax
-	mov di, keybd_event_table
-.loop:
-	mov ax, [di + 2]
-	cmp ax, 0
-	je .register
-	add di, 4
-	jmp .loop
-
-.register:
-	pop ax
-
-	mov [di], ax
-	mov [di + 2], si
-
-	popa
-	ret
-
-;Remove keyboard event from tables
-;	SI - Address of keyboard handler
-;	AX - Scancode to capture
-remove_keybd_event:
-	pusha
-
-	mov di, keybd_event_table
-.loop:
-	cmp di, keybd_event_table + 256		;Go over whole table
-	je .done
-
-	mov bx, [di + 2]					;Do we have the correct address?
-	cmp bx, si
-	jne .next
-
-	mov bx, [di]						;Do we have the correct scancode
-	cmp bx, ax
-	jne .next
-
-	;Clear out table entry
-	mov word [di], 0
-	mov word [di + 2], 0
-
-.next:
-	add di, 4							;Increment to next entry
-	jmp .loop
-
-.done:
-	popa
-	ret
-
+;Clear keyboard buffer and reset buffer index
 clear_keybd_buff:
 	pusha
 	cli

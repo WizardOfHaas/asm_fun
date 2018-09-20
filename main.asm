@@ -33,8 +33,11 @@ start:
 
 	mov si, keybd_test
 	mov ax, 0x1C
-	call register_keybd_event
+	mov di, keybd_event_table
+	call register_event
 	mov si, keybd_event_table
+
+	;int 0x08
 
 	jmp end
 
@@ -48,6 +51,7 @@ ivt_msg:		db 'Init IVT...              ', 0
 %include "tty.asm"
 %include "keybd.asm"
 %include "ivt.asm"
+%include "event.asm"
 
 keybd_test:
 	pusha
@@ -55,6 +59,9 @@ keybd_test:
 	mov si, keybd_buff
 	call sprint
 	call new_line
+
+	mov ax, 16
+	call dump_mem
 
 	call clear_keybd_buff
 

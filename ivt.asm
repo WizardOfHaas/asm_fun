@@ -9,7 +9,7 @@ load_isr_stubs:
 	db 0x05,	;Bound Range Exceeded
 	db 0x06,	;Invalid Op-code
 	db 0x07,	;Device not Available
-	;db 0x08,	;Double Fault
+	db 0x08,	;Double Fault
 	db 0x0A,	;Invalid TSS
 	db 0x0B,	;Segment not Present
 	db 0x0C,	;Stack-Segment Fault
@@ -26,10 +26,34 @@ init_ivt:
 	pusha
 	cli
 
-	;Initialize keyboard handler
-	mov ax, 0x09
-	mov si, keybd_isr
-	call register_ivt
+	;Start PIC init (ICW 1)
+	mov al, 0x11
+	out 0x20, al
+	out 0xA0, al
+
+	;Remap (ICW 2)
+	mov al, 0x20
+	out 0x21, al	;IRQ 0 -> INT 0x20
+
+	mov al, 0x28
+	out 0xA1, al	;IRQ 8 -> INT 0x28
+
+	;Setup PIC master/slave (ICW 3)
+	mov al, 0x04
+	out 0x21, al	;Init master PIC
+
+	mov al, 0x02
+	out 0xA1, al	;Init slave PIC
+
+	;Set x86 mode (ICW 4)
+	mov al, 0x01
+	out 0x21, al
+	out 0xA1, al
+
+	;Clear command PIC bytes
+	mov al, 0
+	out 0x21, al
+	out 0xA1, al
 
 	;Register generic ISRs for errors
 	mov di, load_isr_stubs
@@ -39,23 +63,43 @@ init_ivt:
 	cmp ax, 0xFF
 	je .done
 
-	call new_line
-	call hprint
-
 	call register_ivt
 	inc di
 	jmp .loop
 
 .done:
+	;Register keyboard handler
+	mov ax, 0x21
+	mov si, keybd_isr
+	call register_ivt
 
-	mov si, .msg
-	call sprint
-	
+	;Register timer handler
+	mov ax, 0x20
+	mov si, timer_isr
+	call register_ivt
+
 	sti
 	popa
 	ret
 
-	.msg db 'DONE', 0
+	.msg db 10, 'DONE', 10, 0
+
+timer_isr:
+	pusha
+
+	inc word [.ticks]
+	;mov ax, word [.ticks]
+	;call iprint
+	;call new_line
+
+	mov al, 0x20
+	out 0xA0, al
+	out 0x20, al
+
+	popa
+	iret
+
+	.ticks dw 0
 
 ;Simple ISR stub
 isr_stub:
@@ -73,6 +117,10 @@ isr_stub:
 
 	call new_line
 	call print_regs
+
+	mov al, 0x20
+	out 0xA0, al
+	out 0x20, al
 
 	popa
 	iret

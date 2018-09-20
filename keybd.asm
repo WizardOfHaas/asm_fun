@@ -30,9 +30,6 @@ keybd_isr:
 	xchg ah, al					;Get original
 	out 0x61, al				;Send that back
 
-	mov al, 0x20				;End of Interrupt
-	out 0x20, al	
-
 	pop ax						;Make sure AX just show AL data
 	mov ah, 0
 
@@ -114,6 +111,11 @@ keybd_isr:
 
 .key_up:
 .done:
+	;Send EOI
+	mov al, 0x20
+	out 0xA0, al
+	out 0x20, al
+
 	popad
 	iret
 

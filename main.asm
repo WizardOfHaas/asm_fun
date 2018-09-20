@@ -31,20 +31,46 @@ start:
 	call init_ivt
 	call print_ok
 
+	;Initialize floppy disk drive
+	mov si, flpy_msg
+	call sprint
+	call init_flpy
+	call print_ok
+
+	;Print out total memory detected
+	call new_line
+	mov ax, [total_mem]
+	call iprint
+	mov si, kb_msg
+	call sprint
+
+	;Register keyboard event on enter key down
 	mov si, keybd_test
 	mov ax, 0x1C
 	mov di, keybd_event_table
 	call register_event
 	mov si, keybd_event_table
 
-	;int 0x08
+	mov si, 0x1000
+	mov ax, 256
+	call dump_mem
 
 	jmp end
 
-boot_msg: 		db 'Booting up...', 10, 0
+boot_msg: 		
+    db "     ______               ____  _____", 10
+   	db "    / ____/_  ______     / __ \/ ___/", 10
+  	db "   / /_  / / / / __ \   / / / /\__ \------------Hobby-----", 10
+	db "  / __/ / /_/ / / / /  / /_/ /___/ /----------Operating--", 10
+	db " /_/    \__,_/_/ /_/   \____//____/------------System---", 10
+	db 0
+
 panic_msg:		db 'Kernel Panic!', 10, 0
 mm_msg:			db 'Init memory manager...   ', 0
 ivt_msg:		db 'Init IVT...              ', 0
+flpy_msg:		db 'Init floppy disk...      ', 0
+
+kb_msg:			db 'kb detected', 10, 0
 
 %include "mem.asm"
 %include "string.asm"
@@ -52,6 +78,7 @@ ivt_msg:		db 'Init IVT...              ', 0
 %include "keybd.asm"
 %include "ivt.asm"
 %include "event.asm"
+%include "flpy.asm"
 
 keybd_test:
 	pusha

@@ -15,7 +15,7 @@ endstruc
 free_mem_ll: dw 0
 used_mem_ll: dw 0
 
-total_mem: db 0, 0
+total_mem: dw 0
 
 ;Do needed setup for memory management, mainly setting up structs for malloc
 init_mm:

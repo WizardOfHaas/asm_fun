@@ -38,13 +38,13 @@ load_isr_stubs:
 	dw isr_E
 
 	;db 0x10	;FPU Exception
-	;dw	isr_10
+	;dw	isr_11
 
 	db 0x11		;Alignment Check
 	dw isr_11
 
-	db 0x13		;SIMD Exception
-	dw isr_13
+	;db 0x13		;SIMD Exception
+	;dw isr_13
 
 	db 0x14		;Virtualization Exception
 	dw isr_14
@@ -56,7 +56,7 @@ init_ivt:
 	pusha
 	cli
 
-	;Save BIOS handlers
+	;Relocate BIOS handlers
 	;Shift them all up to int 0x00 -> int 0x30
 	xor ax, ax
 
@@ -66,7 +66,7 @@ init_ivt:
 	mov fs, ax
 	mov di, 0xC0	;Location of int 0x30
 
-	mov ax, 0x400	;Whole table (hamfist approach)
+	mov ax, 0x400	;Whole table (hamfisted approach, as always)
 	call memcpy
 
 	;Start PIC init (ICW 1)

@@ -7,6 +7,8 @@ init_flpy:
 
 	call reset_flpy
 
+	jmp .done
+
 	mov ax, 0x00
 	call lba2chs
 
@@ -25,10 +27,17 @@ init_flpy:
 	mov bx, 0x1000	;Set buffer offset
 	pop ax
 
-	int 0x13
+	call new_line
+	call print_regs
 
+	clc
+	int 0x13
+	jc kernel_panic
+
+	call print_regs
 	pop es
 
+.done:
 	popa
 	ret
 
@@ -38,7 +47,7 @@ reset_flpy:
 	mov ax, 0
 	mov dl, 0
 	stc
-	int 13h
+	int 0x13
 
 	popa	
 	ret

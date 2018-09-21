@@ -39,7 +39,7 @@ start:
 
 	mov ax, 0x00
 	mov es, ax
-	mov si, 0x00
+	mov si, 0x1000
 	mov ax, 128
 	call dump_mem
 
@@ -100,6 +100,8 @@ kernel_panic:
 	mov si, panic_msg
 	mov al, 0x04
 	call attr_sprint
+	cli
+	hlt
 
 end:
 	;cli

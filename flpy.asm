@@ -7,7 +7,7 @@ init_flpy:
 
 	call reset_flpy
 
-	mov ax, 0x02
+	mov ax, 0x01
 	call lba2chs
 
 	mov ch, cl		;Set cylinder

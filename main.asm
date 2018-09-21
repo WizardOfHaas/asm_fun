@@ -49,12 +49,11 @@ start:
 	mov ax, 0x1C
 	mov di, keybd_event_table
 	call register_event
-	mov si, keybd_event_table
 
 	mov ax, 0x00
 	mov es, ax
 	mov si, 0x1000
-	mov ax, 32
+	mov ax, 128
 	call dump_mem
 
 	jmp end

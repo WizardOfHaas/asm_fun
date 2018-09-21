@@ -68,14 +68,14 @@ init_ivt:
 	jmp .loop
 
 .done:
-	;Register keyboard handler
-	mov ax, 0x21
-	mov si, keybd_isr
-	call register_ivt
-
-	;Register timer handler
+	;Register timer handler (IRQ 0)
 	mov ax, 0x20
 	mov si, timer_isr
+	call register_ivt
+
+	;Register keyboard handler (IRQ 1)
+	mov ax, 0x21
+	mov si, keybd_isr
 	call register_ivt
 
 	sti
@@ -116,6 +116,10 @@ isr_stub:
 	in al, 0x20
 
 	call new_line
+	push si
+	mov si, .msg
+	call sprint
+	pop si
 	call print_regs
 
 	mov al, 0x20
@@ -124,6 +128,8 @@ isr_stub:
 
 	popa
 	iret
+
+	.msg db 'INT ', 0
 
 ;Register IVT handler
 ;	SI - ISR address

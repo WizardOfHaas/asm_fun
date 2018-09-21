@@ -2,120 +2,75 @@
 
 	db 'flpy.asm'
 
-	flpy_ack: db 0
-
 init_flpy:
 	pusha
 
-	;Register IRQ 6
-	mov ax, 0x26
-	mov si, flpy_irq
-	call register_ivt
+	call reset_flpy
 
-	mov byte [flpy_ack], 0		;Clear floppy ack
+	mov ax, 0x02
+	call lba2chs
 
-	call flpy_init_dma
+	mov ch, cl		;Set cylinder
+	mov cl, al		;Set sectors
+	mov dh, bl		;Set head
+	mov dl, 0x00	;Set drive (A:)
 
-	;Prep for read
-	call flpy_dma_read
-	mov al, 0xE6
-	call flpy_cmd
+	mov ah, 0x02	;Set to read
+	mov al, 0x01	;Set number sectors to read
 
-	mov al, 0x00				;Head << 2
-	call flpy_cmd
-
-	mov al, 0x00				;Track
-	call flpy_cmd
-
-	mov al, 0x00				;Head
-	call flpy_cmd
-
-	mov al, 0x00				;Sector
-	call flpy_cmd
-
-	mov al, 0x00				;Somehting
-	call flpy_cmd
-
-.loop
-	cmp byte [flpy_ack], 0
-	je .loop
-
-	mov byte [flpy_ack], 0
-
-	popa
-	ret
-
-;Send command to floppy disk
-;	AL - command to send
-flpy_cmd:
+	push es
 	push ax
-	;Wait for floppy to be ready
-.wait:
-	in al, 0x3F2
-	and al, 128
-	jz .wait
-
+	mov ax, 0x00
+	mov es, ax		;Set buffer segment
+	mov bx, 0x1000	;Set buffer offset
 	pop ax
 
-	out 0x3F5, al
+	int 0x13
 
-	call new_line
+	jc kernel_panic
+
 	call print_regs
-
-	ret
-
-flpy_init_dma:
-	pusha
-
-	mov al, 0x06
-	out 0x0A, al				;mask dma channel
-
-	mov al, 0xFF
-	out 0xD8, al				;reset master flip-fl
-
-	mov ax, 0x00				;Buffer at physical address 0x1000
-	out 0x04, al
-
-	mov al, 0x10
-	out 0x04, al
-
-	mov al, 0xFF
-	out 0xd8, al				;reset master flip-fl
-	out 0x05, al				;count to 0x23ff (number of bytes in a 3.5" floppy disk track)
-
-	mov al, 0x23
-	out 0x05, al
-
-	mov al, 0
-	out 0x80, al 			    ;external page register
-
-	mov al, 0x02
-	out 0x0a, al				;unmask dma channel
+	pop es
 
 	popa
 	ret
 
-flpy_dma_read:
+reset_flpy:
 	pusha
 
-	mov al, 0x06
-	out 0x0a, al	;mask dma channel 2
+	mov ax, 0
+	mov dl, 0
+	stc
+	int 13h
 
-	mov al, 0x56
-	out 0x0b, al 	;single transfer, address increment, autoinit, read, channel 2
-
-	mov al, 0x02
-	out 0x0a, al	;Unmask channel 2
-
-	popa
+	popa	
 	ret
 
-flpy_irq:
-	pusha
-	cli
+;LBA to CHS address
+;In
+;	AX - LBA
+;Out
+;	AX - sector
+;	BX - head
+;	CX - cylinder
+lba2chs:
+	push dx
+	xor dx, dx
+	mov bx, [sectors_per_track]
+	div bx
+	inc dx
+	push dx
 
-	mov byte [flpy_ack], 1		;Set floppy ack
+	xor dx, dx
+	mov bx, [num_heads]
+	div bx
 
-	sti
-	popa
-	iret
+	mov cx, ax
+	mov bx, dx
+	pop ax
+	pop dx
+
+	ret
+
+sectors_per_track:	dw 18
+num_heads:			dw 2

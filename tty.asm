@@ -189,6 +189,8 @@ scroll_buffer:
 ;Push buffer into text memory
 dsiplay_buffer:
 	pusha
+	push es
+	push fs
 
 	mov ax, 0xB800			;Set fs to text memory
 	mov fs, ax
@@ -202,6 +204,8 @@ dsiplay_buffer:
 
 	call memcpy				;Copy over buffer
 
+	pop fs
+	pop es
 	popa
 	ret
 

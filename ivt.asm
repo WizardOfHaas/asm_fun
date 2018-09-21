@@ -4,27 +4,70 @@ db 'ivt.asm'
 
 ;List of interrupts to register to generic handler, terminated with 0xFF
 load_isr_stubs:
-	db 0x00, 	;Divide by 0
-	db 0x01,	;Debug
-	db 0x05,	;Bound Range Exceeded
-	db 0x06,	;Invalid Op-code
-	db 0x07,	;Device not Available
-	db 0x08,	;Double Fault
-	db 0x0A,	;Invalid TSS
-	db 0x0B,	;Segment not Present
-	db 0x0C,	;Stack-Segment Fault
-	db 0x0D,	;GPF
-	db 0x0E,	;Page Fault
-	;db 0x10,	;FPU Exception
-	db 0x11,	;Alignment Check
-	db 0x13,	;SIMD Exception
-	db 0x14,	;Virtualization Exception
+	db 0x00 	;Divide by 0
+	dw isr_0
+
+	db 0x01		;Debug
+	dw isr_1
+
+	db 0x05		;Bound Range Exceeded
+	dw isr_5
+
+	db 0x06		;Invalid Op-code
+	dw isr_6
+
+	db 0x07		;Device not Available
+	dw isr_7
+
+	db 0x08		;Double Fault
+	dw isr_8
+
+	db 0x0A		;Invalid TSS
+	dw isr_A
+
+	db 0x0B		;Segment not Present
+	dw isr_B
+
+	db 0x0C		;Stack-Segment Fault
+	dw isr_C
+
+	db 0x0D		;GPF
+	dw isr_D
+
+	db 0x0E		;Page Fault
+	dw isr_E
+
+	;db 0x10	;FPU Exception
+	;dw	isr_10
+
+	db 0x11		;Alignment Check
+	dw isr_11
+
+	db 0x13		;SIMD Exception
+	dw isr_13
+
+	db 0x14		;Virtualization Exception
+	dw isr_14
+
 	db 0xFF	;Terminate list
 
 ;Setup IVT
 init_ivt:
 	pusha
 	cli
+
+	;Save BIOS handlers
+	;Shift them all up to int 0x00 -> int 0x30
+	xor ax, ax
+
+	mov es, ax
+	mov si, ax		;Start of IVT
+
+	mov fs, ax
+	mov di, 0xC0	;Location of int 0x30
+
+	mov ax, 0x400	;Whole table (hamfist approach)
+	call memcpy
 
 	;Start PIC init (ICW 1)
 	mov al, 0x11
@@ -57,14 +100,14 @@ init_ivt:
 
 	;Register generic ISRs for errors
 	mov di, load_isr_stubs
-	mov si, isr_stub
 .loop:
 	movzx ax, byte [di]
 	cmp ax, 0xFF
 	je .done
 
+	mov si, word [di + 1]
 	call register_ivt
-	inc di
+	add di, 3
 	jmp .loop
 
 .done:
@@ -101,10 +144,67 @@ timer_isr:
 
 	.ticks dw 0
 
-;Simple ISR stub
+;Simple ISR stubs
+isr_0:
+	mov ax, 0x00
+	jmp isr_stub
+
+isr_1:
+	mov ax, 0x01
+	jmp isr_stub
+
+isr_5:
+	mov ax, 0x05
+	jmp isr_stub
+
+isr_6:
+	mov ax, 0x06
+	jmp isr_stub
+
+isr_7:
+	mov ax, 0x07
+	jmp isr_stub
+
+isr_8:
+	mov ax, 0x08
+	jmp isr_stub
+
+isr_A:
+	mov ax, 0x0A
+	jmp isr_stub
+
+isr_B:
+	mov ax, 0x0B
+	jmp isr_stub
+
+isr_C:
+	mov ax, 0x0C
+	jmp isr_stub
+
+isr_D:
+	mov ax, 0x0D
+	jmp isr_stub
+
+isr_E:
+	mov ax, 0x0E
+	jmp isr_stub
+
+isr_11:
+	mov ax, 0x11
+	jmp isr_stub
+
+isr_13:
+	mov ax, 0x13
+	jmp isr_stub
+
+isr_14:
+	mov ax, 0x14
+	jmp isr_stub
+
 isr_stub:
 	pusha
 
+	push ax
 	mov al, 0x0A
 	out 0xA0, al
 	out 0x20, al
@@ -120,6 +220,8 @@ isr_stub:
 	mov si, .msg
 	call sprint
 	pop si
+
+	pop ax
 	call print_regs
 
 	mov al, 0x20

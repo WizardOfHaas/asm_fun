@@ -8,7 +8,7 @@ start:
 	cli
 	xor ax, ax		;make it zero
 	mov ss, ax		;stack starts at 0
-	mov sp, 0FFFFh
+	mov sp, 0FFFFh	;star stack at end of segment
  	sti
 
  	;Setup cursor and screen
@@ -37,6 +37,12 @@ start:
 	call init_flpy
 	call print_ok
 
+	mov ax, 0x00
+	mov es, ax
+	mov si, 0x00
+	mov ax, 128
+	call dump_mem
+
 	;Print out total memory detected
 	call new_line
 	mov ax, [total_mem]
@@ -49,12 +55,6 @@ start:
 	mov ax, 0x1C
 	mov di, keybd_event_table
 	call register_event
-
-	mov ax, 0x00
-	mov es, ax
-	mov si, 0x1000
-	mov ax, 128
-	call dump_mem
 
 	jmp end
 

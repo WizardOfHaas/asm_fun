@@ -7,7 +7,7 @@ init_flpy:
 
 	call reset_flpy
 
-	mov ax, 0x01
+	mov ax, 0x00
 	call lba2chs
 
 	mov ch, cl		;Set cylinder
@@ -27,9 +27,6 @@ init_flpy:
 
 	int 0x13
 
-	jc kernel_panic
-
-	call print_regs
 	pop es
 
 	popa

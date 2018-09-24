@@ -47,14 +47,16 @@ init_mm:
 
 	call init_ll 				;Initialize linked list
 
-	;Add in free blocks from known mem mapping
-	;	0x00000500 - 0x00007BFF
-
-
 	;Initialize linked list struct for used mem
 	;Calculate used mem size
-	mov ax, word [end]
+	mov ax, word [start_free_mem]
 	sub ax, 0x100
+
+	push ax
+	mov ax, cs
+	mov es, ax					;|Set segment for node to code segment
+	mov fs, ax					;|Set segment for address to next segment
+	pop ax
 
 	mov si, start				;Place used mem node right before start of kernel
 	sub si, 16
@@ -80,6 +82,7 @@ init_ll:
 
 	mov word [es:si + ll_node.address], fs		;Address segment
 	mov word [es:si + ll_node.address + 2], di	;Address offset
+
 	mov word [es:si + ll_node.size], ax			;Size
 
 	popa
@@ -132,8 +135,8 @@ last_node_ll:
 	ret
 
 ;Add node to linked list struct
-;	FS:DI - location of start of linked list
 ;	ES:SI - address of node to add
+;	FS:DI - location of start of linked list to add to
 add_to_ll:
 	pusha
 
@@ -144,36 +147,55 @@ add_to_ll:
 	mov si, di
 
 	call last_node_ll 					;Get to end of list (in SI)
-	
-	pop es
-	pop si
 
-	xchg si, di
-	mov word [di + ll_node.next], si	;Set new node as next node
-	mov word [si + ll_node.prev], di	;Set new node's prev to old last node
+	pop fs
+	pop di
+
+	;	FS:DI is now new node
+	;	ES:SI is now end of ll
+
+	mov word [es:si + ll_node.next], fs		;Set segment to new node
+	mov word [es:si + ll_node.next + 2], di	;Set offset to new node
+
+	mov word [fs:di + ll_node.prev], es		;Set segment to last node
+	mov word [fs:di + ll_node.prev + 2], si	;Set offset to last node
 
 	popa	
 	ret
 
 ;Remove from linked list struct
-;	SI - address of list member to remove
+;	ES:SI - address of list member to remove
 remove_from_ll:
 	pusha
+	mov ax, es
+	mov gs, ax
 
-	mov ax, word [si + ll_node.prev]		;Get location of previous node
-	mov bx, word [si + ll_node.next]		;Get location of next node
+	mov ax, word [gs:si + ll_node.prev]		;Get segment of previous node
+	mov bx, word [gs:si + ll_node.next]		;Get segment of next node
+	mov es, ax
+	mov fs, bx
+	mov di, word [gs:si + ll_node.next + 2]		;Get offset of next node
+	mov si, word [gs:si + ll_node.prev + 2]		;Get offset of previous node
+
+	;	ES:SI - prev node
+	;	FS:DI - next node
+
 
 	;Set adjacent nodes to now point to eachother
-	mov di, ax
-	cmp di, 0								;Move on if there is no prev node
+	mov ax, es
+	add ax, si
+	cmp si, 0								;Move on if there is no prev node
 	je .next
-	mov [di + ll_node.next], bx
+	mov [es:si + ll_node.next], fs
+	mov [es:si + ll_node.next + 2], di
 
 .next:
-	mov di, bx
+	mov ax, fs
+	add ax, di
 	cmp di, 0
 	je .done								;Move on if there is no next node
-	mov [di + ll_node.prev], ax	
+	mov [fs:di + ll_node.prev], es
+	mov [fs:di + ll_node.prev + 2], si
 
 .done:
 	popa
@@ -182,48 +204,56 @@ remove_from_ll:
 ;Allocate memory
 ;	AX - bytes to allocate
 ;Returns
-;	SI - pointer to linked list struct describing allocated memory
-;###########NEED TO EXTEND TO WORK WITH MULTIPLE SEGMENTS
+;	ES:SI - pointer to linked list struct describing allocated memory
+;###########NEED TO EXTEND TO WORK WITH MULTIPLE SEGMENTS(?)
 malloc:
 	pusha
 
 	mov si, [free_mem_ll]
-	mov word [.largest_block], si
+	mov word [.largest_block], es
+	mov word [.largest_block + 2], si
 .next_node:
 	mov word [.curr_block], si			;Keep track of current block
-	cmp word [si + ll_node.size], ax	;Do we have the size chunk caller wants?
+	cmp word [es:si + ll_node.size], ax	;Do we have the size chunk caller wants?
 	je .done
 
-	mov bx, word [.largest_block]
-	cmp word [si + ll_node.size], bx	;Do we have a new largest block of free mem?
+	mov di, word [.largest_block + 2]
+	mov fs, word[.largest_block]
+	mov bx, word [fs:di + ll_node.size]
+
+	cmp word [es:si + ll_node.size], bx	;Do we have a new largest block of free mem?
 	jg .update_largest
 
 .check_done:
-	cmp word [si + ll_node.next], 0		;Check if we have reached the end of the list
+	cmp word [es:si + ll_node.next], 0		;Check if we have reached the end of the list
 	je .make_block
 
 .next:
-	mov si, word [si + ll_node.next]	;Go to next list node
+	mov si, word [es:si + ll_node.next + 2]	;Go to next list node
+	mov bx, word [es:si + ll_node.next]
+	mov es, bx
 
 	jmp .check_done
 
 .update_largest:
-	mov word [.largest_block], bx
+	mov word [.largest_block], fs
+	mov word [.largest_block + 2], di
 	jmp .next
 
 	;Make a new block of needed size by carving largest free block
 .make_block:
-	mov si, word [.largest_block]		;Get largest block to slice
+	mov si, word [.largest_block + 2]		;Get largest block to slice
+	mov es, word [.largest_block]
 	mov di, si							
-	add di, word [si + ll_node.size]	;Get to end of block
+	add di, word [es:si + ll_node.size]	;Get to end of block
 	add ax, 16							;Calculate size of block to allocate + ll node
 
 	;Test if we have enough RAM, die otherwise
-	mov cx, word [si + ll_node.size]
+	mov cx, word [es:si + ll_node.size]
 	cmp ax, cx
 	jl kernel_panic
 
-	sub word [si + ll_node.size], ax	;Shrink block we are chopping
+	sub word [es:si + ll_node.size], ax	;Shrink block we are chopping
 
 	sub di, ax							;Make space to allcoate new block
 	mov word [.curr_block], di			;Save over lcoation of new node
@@ -251,7 +281,7 @@ malloc:
 	mov si, word [.curr_block]			;Return current block
 	ret
 
-	.largest_block dw 0
+	.largest_block dw 0, 0
 	.curr_block dw 0
 
 ;Free memory

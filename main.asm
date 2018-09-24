@@ -43,12 +43,6 @@ start:
 	;mov ax, 128
 	;call dump_mem
 
-	mov ax, 0x50
-	mov es, ax
-	mov si, start_free_mem
-	mov ax, 32
-	call dump_mem
-
 	;Print out total memory detected
 	call new_line
 	mov ax, [total_mem]
@@ -61,6 +55,16 @@ start:
 	mov ax, 0x1C
 	mov di, keybd_event_table
 	call register_event
+
+	mov ax, 254
+	call malloc
+	call malloc
+	call malloc
+
+	mov ax, 0x50
+	mov es, ax
+	mov si, [used_mem_ll]
+	call print_ll
 
 	jmp end
 

@@ -39,7 +39,7 @@ start:
 
 	mov ax, 0x00
 	mov es, ax
-	mov si, 0x1000
+	mov si, word [flpy_buffer]
 	mov ax, 128
 	call dump_mem
 
@@ -100,6 +100,17 @@ kernel_panic:
 	mov si, panic_msg
 	mov al, 0x04
 	call attr_sprint
+
+	call new_line
+	call print_regs
+
+	call new_line
+	mov ax, ss
+	mov es, ax
+	mov si, sp
+	mov ax, 32
+	call dump_mem
+
 	cli
 	hlt
 

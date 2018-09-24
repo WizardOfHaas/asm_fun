@@ -98,6 +98,8 @@ init_ivt:
 	out 0x21, al
 	out 0xA1, al
 
+	jmp .done
+
 	;Register generic ISRs for errors
 	mov di, load_isr_stubs
 .loop:

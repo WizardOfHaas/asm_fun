@@ -2,12 +2,12 @@
 
 	db 'flpy.asm'
 
+flpy_buffer: dw 0
+
 init_flpy:
 	pusha
 
 	call reset_flpy
-
-	jmp .done
 
 	mov ax, 0x00
 	call lba2chs
@@ -17,19 +17,24 @@ init_flpy:
 	mov dh, bl		;Set head
 	mov dl, 0x00	;Set drive (A:)
 
-	mov ah, 0x02	;Set to read
-	mov al, 0x01	;Set number sectors to read
+	mov ax, 512
+	call malloc
+	mov word [flpy_buffer], si
+	mov bx, word [si + ll_node.address]
 
 	push es
 	push ax
 	mov ax, 0x00
 	mov es, ax		;Set buffer segment
-	mov bx, 0x1000	;Set buffer offset
+	;mov bx, 0x1000	;Set buffer offset
 	pop ax
 
 	call new_line
 	call print_regs
 
+	mov ah, 0x02	;Set to read
+	mov al, 0x01	;Set number sectors to read
+	
 	clc
 	int 0x13
 	jc kernel_panic

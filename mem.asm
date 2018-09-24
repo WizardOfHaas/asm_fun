@@ -242,16 +242,18 @@ malloc:
 
 	;Make a new block of needed size by carving largest free block
 .make_block:
-	mov si, word [.largest_block + 2]		;Get largest block to slice
+	mov si, word [.largest_block + 2]	;Get largest block to slice
 	mov es, word [.largest_block]
-	mov di, si							
-	add di, word [es:si + ll_node.size]	;Get to end of block
+
 	add ax, 16							;Calculate size of block to allocate + ll node
 
 	;Test if we have enough RAM, die otherwise
 	mov cx, word [es:si + ll_node.size]
 	cmp ax, cx
-	jl kernel_panic
+	jg kernel_panic						;We outta RAM!
+
+	mov di, si
+	add di, word [es:si + ll_node.size]	;Get to end of block
 
 	sub word [es:si + ll_node.size], ax	;Shrink block we are chopping
 
@@ -261,10 +263,10 @@ malloc:
 	;Initialize new linked list node
 	mov bx, di
 	add bx, 16
-	mov word [di + ll_node.address], bx	;Set location of memory block
+	mov word [es:di + ll_node.address], bx	;Set location of memory block
 
 	sub ax, 16							
-	mov word [di + ll_node.size], ax	;Set size attribute
+	mov word [es:di + ll_node.size], ax	;Set size attribute
 
 	mov si, di
 	mov di, word [used_mem_ll]			;Get start of used_mem_ll
@@ -282,7 +284,7 @@ malloc:
 	ret
 
 	.largest_block dw 0, 0
-	.curr_block dw 0
+	.curr_block dw 0, 0
 
 ;Free memory
 ;	SI - ll node for malloc'd block

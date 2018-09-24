@@ -17,6 +17,7 @@ init_flpy:
 	mov dh, bl		;Set head
 	mov dl, 0x00	;Set drive (A:)
 
+	;Malloc disk buffer
 	mov ax, 512
 	call malloc
 	mov word [flpy_buffer], si
@@ -36,7 +37,7 @@ init_flpy:
 	mov al, 0x01	;Set number sectors to read
 	
 	clc
-	int 0x13
+	int 0x33
 	jc kernel_panic
 
 	call print_regs
@@ -52,7 +53,7 @@ reset_flpy:
 	mov ax, 0
 	mov dl, 0
 	stc
-	int 0x13
+	int 0x33
 
 	popa	
 	ret

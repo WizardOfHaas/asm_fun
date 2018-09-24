@@ -34,13 +34,19 @@ start:
 	;Initialize floppy disk drive
 	mov si, flpy_msg
 	call sprint
-	call init_flpy
+	;call init_flpy
 	call print_ok
 
-	mov ax, 0x00
+	;mov ax, 0x00
+	;mov es, ax
+	;mov si, word [flpy_buffer]
+	;mov ax, 128
+	;call dump_mem
+
+	mov ax, 0x50
 	mov es, ax
-	mov si, word [flpy_buffer]
-	mov ax, 128
+	mov si, start_free_mem
+	mov ax, 32
 	call dump_mem
 
 	;Print out total memory detected

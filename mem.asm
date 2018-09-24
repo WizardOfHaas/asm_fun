@@ -4,12 +4,12 @@ db 'mem.asm'
 
 free_msg:		db ' bytes free', 10, 0
 
-;Linked list node struct(8 bytes)
+;Linked list node struct(16 bytes)
 struc ll_node
-    .address:	resw	1
-    .size: 		resw	1
-    .prev:		resw 	1
-    .next: 		resw 	1
+    .address:	resw	2
+    .size: 		resw	2
+    .prev:		resw 	2
+    .next: 		resw 	2
 endstruc
 
 free_mem_ll: dw 0
@@ -33,13 +33,23 @@ init_mm:
 	mul bx						;|
 	sub ax, start_free_mem		;Subtract off end of kernal
 	
+	push ax
+	mov ax, cs
+	mov es, ax					;|Set segment for node to code segment
+	mov fs, ax					;|Set segment for address to next segment
+	pop ax
+
 	mov si, start_free_mem		;Make start of free_mem linked lists
 	mov [free_mem_ll], si		;Save over location of free mem ll
 
 	mov di, si					;Address size of first element, directly after ll struct
-	add di, 8
+	add di, 16
 
 	call init_ll 				;Initialize linked list
+
+	;Add in free blocks from known mem mapping
+	;	0x00000500 - 0x00007BFF
+
 
 	;Initialize linked list struct for used mem
 	;Calculate used mem size
@@ -47,7 +57,7 @@ init_mm:
 	sub ax, 0x100
 
 	mov si, start				;Place used mem node right before start of kernel
-	sub si, 8
+	sub si, 16
 	mov [used_mem_ll], si		;Save location of start of used mem list
 	mov di, 0x100				;Addresses to start of kernel
 
@@ -57,20 +67,26 @@ init_mm:
 	ret
 
 ;Initialize empty linked list
-;	SI - location for first node of linked list
+;	ES:SI - location for first node of linked list
+;	FS:DI - Address attribute
 ;	AX - Size Attribute
-;	DI - Address attribute
 init_ll:
 	pusha
 
-	mov word [si + ll_node.prev], 0
-	mov word [si + ll_node.next], 0
-	mov word [si + ll_node.address], di
-	mov word [si + ll_node.size], ax
+	mov word [es:si + ll_node.prev], 0			;Prev segment
+	mov word [es:si + ll_node.prev + 2], 0		;Prev offset
+	mov word [es:si + ll_node.next], 0			;Next segment
+	mov word [es:si + ll_node.next + 2], 0		;Next offset
+
+	mov word [es:si + ll_node.address], fs		;Address segment
+	mov word [es:si + ll_node.address + 2], di	;Address offset
+	mov word [es:si + ll_node.size], ax			;Size
 
 	popa
 	ret
 
+;Print out linked list struct
+;	ES:SI - Start of linked list
 print_ll:
 	pusha
 
@@ -78,10 +94,17 @@ print_ll:
 	mov ax, 16
  	call dump_mem
 
- 	cmp word [si + ll_node.next], 0
+ 	mov bx, word [es:si + ll_node.next]
+ 	mov cx, word [es:si + ll_node.next + 2]
+ 	add bx, cx
+
+ 	cmp bx, 0
  	je .done
 
- 	mov si, word [si + ll_node.next]
+ 	mov di, word [es:si + ll_node.next + 2]
+ 	mov bx, word [es:si + ll_node.next]
+ 	mov es, bx
+ 	mov si, di
 
  	jmp .mem_loop
 
@@ -90,25 +113,40 @@ print_ll:
 	ret
 
 ;Get last node of linked list
-;	SI - location of first node of linked list
+;	ES:SI - location of first node of linked list
 last_node_ll:
 .loop:
-	cmp word [si + ll_node.next], 0
-	je .done	
+	mov bx, word [es:si + ll_node.next]
+ 	mov cx, word [es:si + ll_node.next + 2]
+ 	add bx, cx
 
-	mov si, word [si + ll_node.next]
+ 	cmp bx, 0
+ 	je .done
+
+ 	mov di, word [es:si + ll_node.next + 2]
+ 	mov bx, word [es:si + ll_node.next]
+ 	mov es, bx
+ 	mov si, di
 	jmp .loop
 .done:
 	ret
 
 ;Add node to linked list struct
-;	DI - location of start of linked list
-;	SI - address of node to add
+;	FS:DI - location of start of linked list
+;	ES:SI - address of node to add
 add_to_ll:
 	pusha
 
-	xchg si, di
+	push si
+	push es
+	mov ax, fs
+	mov es, ax
+	mov si, di
+
 	call last_node_ll 					;Get to end of list (in SI)
+	
+	pop es
+	pop si
 
 	xchg si, di
 	mov word [di + ll_node.next], si	;Set new node as next node
@@ -145,6 +183,7 @@ remove_from_ll:
 ;	AX - bytes to allocate
 ;Returns
 ;	SI - pointer to linked list struct describing allocated memory
+;###########NEED TO EXTEND TO WORK WITH MULTIPLE SEGMENTS
 malloc:
 	pusha
 
@@ -177,7 +216,7 @@ malloc:
 	mov si, word [.largest_block]		;Get largest block to slice
 	mov di, si							
 	add di, word [si + ll_node.size]	;Get to end of block
-	add ax, 8							;Calculate size of block to allocate + ll node
+	add ax, 16							;Calculate size of block to allocate + ll node
 
 	;Test if we have enough RAM, die otherwise
 	mov cx, word [si + ll_node.size]
@@ -191,10 +230,10 @@ malloc:
 
 	;Initialize new linked list node
 	mov bx, di
-	add bx, 8
+	add bx, 16
 	mov word [di + ll_node.address], bx	;Set location of memory block
 
-	sub ax, 8							
+	sub ax, 16							
 	mov word [di + ll_node.size], ax	;Set size attribute
 
 	mov si, di

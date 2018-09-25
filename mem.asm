@@ -283,14 +283,26 @@ malloc:
 	mov word [.curr_block + 2], di			;Save over lcoation of new ll node
 
 	;Initialize new linked list node
-	mov bx, di
-	add bx, 16
-	mov word [es:di + ll_node.address + 2], bx	;Set location of memory block
-	mov word [es:di + ll_node.address], es
+	;mov bx, di
+	;add bx, 16
+	;mov word [es:di + ll_node.address + 2], bx	;Set location of memory block
+	;mov word [es:di + ll_node.address], es
 
-	sub ax, 16							
-	mov word [es:di + ll_node.size], ax		;Set size attribute
-	mov word [es:di + ll_node.size + 2], 0x00
+	;sub ax, 16							
+	;mov word [es:di + ll_node.size], ax		;Set size attribute
+	;mov word [es:di + ll_node.size + 2], 0x00
+
+	pusha
+	mov si, di
+	add di, 16
+	sub ax, 16
+	mov bx, es
+	mov fs, bx
+
+	call new_ll_node
+
+	call print_regs
+	popa
 
 	mov si, di
 	mov di, word [used_mem_ll]				;Get start of used_mem_ll
@@ -307,12 +319,39 @@ malloc:
 	popa
 
 	mov si, word [.curr_block + 2]			;Return current block
+	push ax
 	mov ax, word [.curr_block]
 	mov es, ax
+	pop ax
 	ret
 
 	.largest_block dw 0, 0
 	.curr_block dw 0, 0
+
+;Make new ll_node
+;	ES:SI - location of node
+;	FS:DI - address attribute
+;	AX - size attrib
+new_ll_node:
+	pusha
+
+	mov word [es:si + ll_node.size], ax			;Set size
+	mov word [es:si + ll_node.size + 2], 0x00	;Set reserve word
+
+	mov word [es:si + ll_node.address], fs		;Set address segment
+	mov word [es:si + ll_node.address + 2], di	;Set address offset
+
+	;Clear out rest of data to 0x00
+	mov ax, es
+	mov fs, ax
+	mov ax, 8
+	mov di, si
+	add di, 8
+	mov bx, 0x00
+	call memset
+
+	popa
+	ret
 
 ;Free memory
 ;	SI - ll node for malloc'd block

@@ -283,15 +283,6 @@ malloc:
 	mov word [.curr_block + 2], di			;Save over lcoation of new ll node
 
 	;Initialize new linked list node
-	;mov bx, di
-	;add bx, 16
-	;mov word [es:di + ll_node.address + 2], bx	;Set location of memory block
-	;mov word [es:di + ll_node.address], es
-
-	;sub ax, 16							
-	;mov word [es:di + ll_node.size], ax		;Set size attribute
-	;mov word [es:di + ll_node.size + 2], 0x00
-
 	pusha
 	mov si, di
 	add di, 16
@@ -300,8 +291,6 @@ malloc:
 	mov fs, bx
 
 	call new_ll_node
-
-	call print_regs
 	popa
 
 	mov si, di

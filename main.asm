@@ -56,11 +56,10 @@ start:
 	mov di, keybd_event_table
 	call register_event
 
+	;Test out malloc
 	mov ax, 0x0100
 	call malloc
-	call free
 	call malloc
-	;call malloc
 
 	mov ax, 0x50
 	mov es, ax
@@ -109,9 +108,9 @@ keybd_test:
 
 kernel_panic:
 	pusha
+	mov byte [char_attr], 0x14
 	mov si, panic_msg
-	mov al, 0x04
-	call attr_sprint
+	call sprint
 
 	call new_line
 	popa

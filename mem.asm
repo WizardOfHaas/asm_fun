@@ -6,8 +6,8 @@ free_msg:		db ' bytes free', 10, 0
 
 ;Linked list node struct(16 bytes)
 struc ll_node
-    .address:	resw	2
     .size: 		resw	2
+    .address:	resw	2
     .prev:		resw 	2
     .next: 		resw 	2
 endstruc
@@ -118,6 +118,10 @@ print_ll:
 ;Get last node of linked list
 ;	ES:SI - location of first node of linked list
 last_node_ll:
+	push di
+	push bx
+	push cx
+
 .loop:
 	mov bx, word [es:si + ll_node.next]
  	mov cx, word [es:si + ll_node.next + 2]
@@ -131,7 +135,12 @@ last_node_ll:
  	mov es, bx
  	mov si, di
 	jmp .loop
+
 .done:
+
+	pop cx
+	pop bx
+	pop di
 	ret
 
 ;Add node to linked list struct
@@ -142,11 +151,13 @@ add_to_ll:
 
 	push si
 	push es
+
+	;Swap around parameters to get last node
 	mov ax, fs
 	mov es, ax
 	mov si, di
 
-	call last_node_ll 					;Get to end of list (in SI)
+	call last_node_ll 						;Get to end of list (in SI)
 
 	pop fs
 	pop di
@@ -174,8 +185,8 @@ remove_from_ll:
 	mov bx, word [gs:si + ll_node.next]		;Get segment of next node
 	mov es, ax
 	mov fs, bx
-	mov di, word [gs:si + ll_node.next + 2]		;Get offset of next node
-	mov si, word [gs:si + ll_node.prev + 2]		;Get offset of previous node
+	mov di, word [gs:si + ll_node.next + 2]	;Get offset of next node
+	mov si, word [gs:si + ll_node.prev + 2]	;Get offset of previous node
 
 	;	ES:SI - prev node
 	;	FS:DI - next node
@@ -209,23 +220,33 @@ remove_from_ll:
 malloc:
 	pusha
 
+	;Get start of free mem block list
 	mov si, [free_mem_ll]
+	mov bx, cs
+	mov es, bx
+
+	;Save 1st entry as current largest
 	mov word [.largest_block], es
 	mov word [.largest_block + 2], si
-.next_node:
-	mov word [.curr_block], si			;Keep track of current block
-	cmp word [es:si + ll_node.size], ax	;Do we have the size chunk caller wants?
+.loop:
+	mov word [.curr_block + 2], si			;Keep track of current block
+	mov word [.curr_block], es
+
+	cmp word [es:si + ll_node.size], ax		;Do we have the size chunk caller wants?
 	je .done
 
+	;Get size of current largest block
 	mov di, word [.largest_block + 2]
 	mov fs, word[.largest_block]
 	mov bx, word [fs:di + ll_node.size]
 
-	cmp word [es:si + ll_node.size], bx	;Do we have a new largest block of free mem?
+	cmp word [es:si + ll_node.size], bx		;Do we have a new largest block of free mem?
 	jg .update_largest
 
 .check_done:
-	cmp word [es:si + ll_node.next], 0		;Check if we have reached the end of the list
+	mov bx, word [es:si + ll_node.next]
+	add bx, word [es:si + ll_node.next + 2]
+	cmp bx, 0								;Check if we have reached the end of the list
 	je .make_block
 
 .next:
@@ -233,54 +254,61 @@ malloc:
 	mov bx, word [es:si + ll_node.next]
 	mov es, bx
 
-	jmp .check_done
+	jmp .loop
 
 .update_largest:
-	mov word [.largest_block], fs
-	mov word [.largest_block + 2], di
+	mov word [.largest_block], es
+	mov word [.largest_block + 2], si
 	jmp .next
 
 	;Make a new block of needed size by carving largest free block
 .make_block:
-	mov si, word [.largest_block + 2]	;Get largest block to slice
+	mov si, word [.largest_block + 2]		;Get largest block to slice
 	mov es, word [.largest_block]
 
-	add ax, 16							;Calculate size of block to allocate + ll node
+	add ax, 16								;Calculate size of block to allocate + ll node
 
 	;Test if we have enough RAM, die otherwise
 	mov cx, word [es:si + ll_node.size]
 	cmp ax, cx
-	jg kernel_panic						;We outta RAM!
+	jl kernel_panic							;We outta RAM! PANIC!
 
 	mov di, si
-	add di, word [es:si + ll_node.size]	;Get to end of block
+	add di, word [es:si + ll_node.size]		;Get to end of block
 
-	sub word [es:si + ll_node.size], ax	;Shrink block we are chopping
+	sub word [es:si + ll_node.size], ax		;Shrink block we are chopping
 
-	sub di, ax							;Make space to allcoate new block
-	mov word [.curr_block], di			;Save over lcoation of new node
+	sub di, ax								;Make space to allcoate new block
+	mov word [.curr_block], es
+	mov word [.curr_block + 2], di			;Save over lcoation of new ll node
 
 	;Initialize new linked list node
 	mov bx, di
 	add bx, 16
-	mov word [es:di + ll_node.address], bx	;Set location of memory block
+	mov word [es:di + ll_node.address + 2], bx	;Set location of memory block
+	mov word [es:di + ll_node.address], es
 
 	sub ax, 16							
-	mov word [es:di + ll_node.size], ax	;Set size attribute
+	mov word [es:di + ll_node.size], ax		;Set size attribute
+	mov word [es:di + ll_node.size + 2], 0x00
 
 	mov si, di
-	mov di, word [used_mem_ll]			;Get start of used_mem_ll
+	mov di, word [used_mem_ll]				;Get start of used_mem_ll
+	mov ax, cs
+	mov fs, ax
 
-	call add_to_ll 						;Add to used_mem_ll
+	call add_to_ll 							;Add to used_mem_ll
 
-	mov si, word [.curr_block]			;Make sure to get out of the edge case catch
+	mov si, word [.curr_block]				;Make sure to get out of the edge case catch
 
 .done:
-	cmp si, word [free_mem_ll]			;Check we allocated something
-	je .make_block						;If not, we only have one block so split it up
+	cmp si, word [free_mem_ll]				;Check we allocated something
+	je .make_block							;If not, we only have one block so split it up
 	popa
 
-	mov si, word [.curr_block]			;Return current block
+	mov si, word [.curr_block + 2]			;Return current block
+	mov ax, word [.curr_block]
+	mov es, ax
 	ret
 
 	.largest_block dw 0, 0
@@ -291,10 +319,10 @@ malloc:
 free:
 	pusha
 
-	call remove_from_ll 				;Remove from current list
+	call remove_from_ll 					;Remove from current list
 
 	;Add to free mem list
-	mov di, word [free_mem_ll]			;Add to free mem list
+	mov di, word [free_mem_ll]				;Add to free mem list
 	call add_to_ll
 
 	mov ax, 16
@@ -309,10 +337,10 @@ free:
 dump_mem:
 	pusha
 
-	mov cx, ax				;Get iterater loaded
-	mov ax, 16				;Do 16 byte lines
+	mov cx, ax							;Get iterater loaded
+	mov ax, 16							;Do 16 byte lines
 .loop:
-	call dump_mem_line 			;Do one line
+	call dump_mem_line 					;Do one line
 	call new_line
 
 	;Update iterators, addresses
@@ -327,21 +355,21 @@ dump_mem:
 dump_mem_line:
 	pusha
 
-	call advence_cursor		;Make some space
+	call advence_cursor				;Make some space
 
-	push ax					;Save for later
+	push ax							;Save for later
 
-	mov cx, ax				;Prepare iterator
+	mov cx, ax						;Prepare iterator
 	mov ax, es
 	call hprint
 	mov al, ':'
 	call cprint
 	mov ax, si
-	call hprint				;Print address
+	call hprint						;Print address
 
 	mov al, '|'				
 	call cprint
-.hex_loop:					;Print out hex string of RAM
+.hex_loop:							;Print out hex string of RAM
 	mov al, byte [es:si]
 	call hprint_byte
 	call advence_cursor
@@ -356,7 +384,7 @@ dump_mem_line:
 
 	pop cx
 	sub si, cx
-.chr_loop:					;Print out char string of RAM
+.chr_loop:							;Print out char string of RAM
 	mov al, byte[es:si]
 	call cprint
 
@@ -376,7 +404,7 @@ memcpy:
 	pusha
 
 .loop:
-	cmp ax, 0			;Have we copied everything?
+	cmp ax, 0						;Have we copied everything?
 	je .done
 
 	;Move over the next byte
@@ -386,7 +414,7 @@ memcpy:
 	;Increment the source and destinations
 	inc si
 	inc di
-	dec ax				;Decrement the bytes counter
+	dec ax							;Decrement the bytes counter
 	jmp .loop
 
 .done:
@@ -401,10 +429,10 @@ memset:
 	pusha
 
 .loop:
-	cmp ax, 0			;Are we done with chunk?
+	cmp ax, 0						;Are we done with chunk?
 	je .done
 
-	mov [fs:di], bx		;Set to specified value
+	mov [fs:di], bx					;Set to specified value
 
 	;Increment counter and location
 	inc di

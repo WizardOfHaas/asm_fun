@@ -296,6 +296,8 @@ print_regs:
 	pusha
 
 	;Push regs to display to stack
+	push fs
+	push es
 	push di
 	push si
 	push dx
@@ -317,7 +319,7 @@ print_regs:
 	pop ax				;Grab register from stack
 	call hprint
 
-	cmp cx, 6			;Loop until we print out all registers
+	cmp cx, 8			;Loop until we print out all registers
 	jne .loop
 
 	call new_line
@@ -332,3 +334,5 @@ print_regs:
 		db ' dx: ', 0
 		db ' si: ', 0
 		db ' di: ', 0
+		db ' es: ', 0
+		db ' fs: ', 0

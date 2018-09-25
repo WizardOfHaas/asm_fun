@@ -56,25 +56,6 @@ start:
 	mov di, keybd_event_table
 	call register_event
 
-	;Test out malloc
-	mov ax, 0x0100
-	call malloc
-	push si
-	call malloc
-	push si
-	call malloc
-
-	;call free
-	;pop si
-	;call free
-	;pop si
-	;call free
-
-	mov ax, 0x50
-	mov es, ax
-	mov si, [used_mem_ll]
-	call print_ll
-
 	jmp end
 
 boot_msg: 		

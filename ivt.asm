@@ -43,8 +43,8 @@ load_isr_stubs:
 	db 0x11		;Alignment Check
 	dw isr_11
 
-	;db 0x13		;SIMD Exception
-	;dw isr_13
+	db 0x13		;SIMD Exception
+	dw isr_13
 
 	db 0x14		;Virtualization Exception
 	dw isr_14
@@ -194,8 +194,9 @@ isr_11:
 	jmp isr_stub
 
 isr_13:
-	mov ax, 0x13
-	jmp isr_stub
+	int 0x43
+	iret
+	;jmp isr_stub
 
 isr_14:
 	mov ax, 0x14

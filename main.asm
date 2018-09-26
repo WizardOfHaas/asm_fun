@@ -31,17 +31,31 @@ start:
 	call init_ivt
 	call print_ok
 
+	mov ah, 0x00
+	mov dl, 0x00
+
+	call new_line
+	call print_regs
+
+	clc
+	int 0x13
+	jc kernel_panic
+
+	call print_regs
+
+	jmp end
+
 	;Initialize floppy disk drive
 	mov si, flpy_msg
 	call sprint
-	;call init_flpy
+	call init_flpy
 	call print_ok
 
-	;mov ax, 0x00
-	;mov es, ax
-	;mov si, word [flpy_buffer]
-	;mov ax, 128
-	;call dump_mem
+	mov ax, cs
+	mov es, ax
+	mov si, flpy_buffer
+	mov ax, 128
+	call dump_mem
 
 	;Print out total memory detected
 	call new_line

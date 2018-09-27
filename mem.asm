@@ -93,6 +93,11 @@ init_ll:
 print_ll:
 	pusha
 
+	push si
+	mov si, .label
+	call sprint
+	pop si
+
 .mem_loop:
 	mov ax, 16
  	call dump_mem
@@ -114,6 +119,8 @@ print_ll:
 .done:
 	popa
 	ret
+
+	.label: db '          |Size |     |Address    |Next Node  |Last Node', 10, 0
 
 ;Get last node of linked list
 ;	ES:SI - location of first node of linked list

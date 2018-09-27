@@ -38,13 +38,13 @@ load_isr_stubs:
 	dw isr_E
 
 	;db 0x10	;FPU Exception
-	;dw	isr_11
+	;dw	isr_10
 
 	db 0x11		;Alignment Check
 	dw isr_11
 
-	db 0x13		;SIMD Exception
-	dw isr_13
+	;db 0x13		;SIMD Exception
+	;dw isr_13
 
 	db 0x14		;Virtualization Exception
 	dw isr_14
@@ -189,14 +189,18 @@ isr_E:
 	mov ax, 0x0E
 	jmp isr_stub
 
+isr_10:
+	mov ax, 0x10
+	jmp isr_stub
+
 isr_11:
 	mov ax, 0x11
 	jmp isr_stub
 
 isr_13:
+	call print_regs
 	int 0x43
-	iret
-	;jmp isr_stub
+	jmp isr_stub
 
 isr_14:
 	mov ax, 0x14

@@ -25,6 +25,11 @@ start:
  	call init_mm
  	call print_ok
 
+ 	mov ax, cs
+ 	mov es, ax
+ 	mov si, word [free_mem_ll]
+ 	call print_ll
+
 	;Initialize and fill out IVT
 	mov si, ivt_msg
 	call sprint
@@ -40,6 +45,11 @@ start:
 	clc
 	int 0x13
 	jc kernel_panic
+
+	call print_regs
+
+	mov ah, 0x01
+	int 0x13
 
 	call print_regs
 

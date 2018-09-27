@@ -7,7 +7,7 @@ flpy_buffer: times 512 db 0
 init_flpy:
 	pusha
 
-	call reset_flpy
+	;call reset_flpy
 
 	mov ax, 0x00
 	call lba2chs

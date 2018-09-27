@@ -25,11 +25,6 @@ start:
  	call init_mm
  	call print_ok
 
- 	mov ax, cs
- 	mov es, ax
- 	mov si, word [free_mem_ll]
- 	call print_ll
-
 	;Initialize and fill out IVT
 	mov si, ivt_msg
 	call sprint

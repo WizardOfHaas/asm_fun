@@ -31,21 +31,32 @@ start:
 	call init_ivt
 	call print_ok
 
-	mov ah, 0x00
+	mov ah, 0x08
 	mov dl, 0x00
+	mov bx, 0x00
+	mov es, bx
+	mov di, 0x00
 
 	call new_line
 	call print_regs
-
-	clc
 	int 0x13
-	jc kernel_panic
-
 	call print_regs
 
-	mov ah, 0x01
-	int 0x13
 
+	mov ax, cs
+	mov es, ax
+
+	mov ah, 0x02
+	mov al, 0x01
+	mov ch, 0x01
+	mov cl, 0x01
+	mov dh, 0x01
+	mov dl, 0x00
+	mov bx, flpy_buffer
+
+	call new_line
+	call print_regs
+	int 0x13
 	call print_regs
 
 	jmp end

@@ -59,6 +59,11 @@ my @opts = (
 			$regs->{ip} += 4;
 		}
 	},{ #0x04
+		name => "mov reg to stack",
+		opt => sub {
+			$stack[$regs->{sp}] = $_[1];
+			$regs->{ip} += 4;
+		}
 	},{ #0x05
 		name => "mov const to reg",
 		opt => sub {
@@ -72,6 +77,11 @@ my @opts = (
 			$regs->{ip} += 4;
 		}
 	},{ #0x07
+		name => "mov reg to stack",
+		opt => sub {
+			$stack[$regs->{sp}] = $regs->{$reg_ids[$_[1]]};
+			$regs->{ip} += 4;
+		}
 	},{ #0x08
 		name => "add const to reg",
 		opt => sub {
@@ -152,44 +162,51 @@ my @opts = (
 		opt => sub {
 			$regs->{flags} = 0;
 			$regs->{flags} |= $flag_masks->{zero} if $stack[$regs->{sp}] == 0;
-			$regs->{flags} |= $flag_masks->{greater} if $stack[$regs->{sp}] > $_[2];
-			$regs->{flags} |= $flag_masks->{equal} if $stack[$regs->{sp}] == $_[2];
+			$regs->{flags} |= $flag_masks->{greater} if $stack[$regs->{sp}] > $_[1];
+			$regs->{flags} |= $flag_masks->{equal} if $stack[$regs->{sp}] == $_[1];
 			$regs->{ip} += 4;
 		}
 	}
 );
 
 my @code = (
-	0x05, 0x02, 0x01, 0x00,
-	#cmp r0, r1
-	0x11, 0x02, 0x03, 0x00,
-	#cmp r0, 0x01
-	0x10, 0x02, 0x01, 0x00,
-	#htl
-	0x00, 0x00, 0x00, 0x00
+	0x05, 0x02, 0x04, 0x00,	#mov r0, 0x04
+	0x11, 0x02, 0x03, 0x00,	#cmp r0, r1
+	0x10, 0x02, 0x05, 0x00,	#cmp r0, 0x05
+	0x05, 0x01, 0x20, 0x00,	#mov sp, 0x20
+	0x04, 0xFF, 0x00, 0x00,	#mov r0
+	0x13, 0xFE, 0x00, 0x00,	#cmp 0x01
+	0x00, 0x00, 0x00, 0x00	#hlt
 );
 
 #Load code to stack
 @stack[0 .. scalar @code - 1] = @code;
 
+#Get ready to output
+`rm -rf /tmp/vm_log`;
+open my $out, ">", "/tmp/vm_log" or die $!;
+
 #While we are running...
 while($regs->{state}){
+	#Output reg and stack data
 	print_regs();
 
 	#Fetch/decode new instruction
 	my $opt_code = $stack[$regs->{ip}];
+	print $opts[$opt_code]->{name}."\n";
 	$opts[$opt_code]->{opt}->(@stack[$regs->{ip} .. $regs->{ip} + 4]);
 }
 
 sub print_regs{
-	printf(
-		"ip: %x  sp: %x  r0: %x  r1: %x  fl: %.5b\t", 
+	my $msg = sprintf(
+		"ip: %.2x  sp: %.2x  r0: %.2x  r1: %.2x  fl: %.5b\t", 
 		$regs->{ip},
 		$regs->{sp},
 		$regs->{r0},
 		$regs->{r1},
 		$regs->{flags}
-	);
+	).
+	join(" ", map { sprintf("%.2x", $_) } @stack[0 .. 50])."\n";
 
-	print join(" ", map { sprintf("%.2x", $_) } @stack[0 .. 25])."\n";
+	print $out $msg;
 }

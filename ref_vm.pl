@@ -166,6 +166,21 @@ my @opts = (
 			$regs->{flags} |= $flag_masks->{equal} if $stack[$regs->{sp}] == $_[1];
 			$regs->{ip} += 4;
 		}
+	},{ #0x14
+		name => "jmp to const",
+		opt => sub {
+			$regs->{ip} = $_[1];
+		}
+	},{ #0x15
+		name => "jmp to reg",
+		opt => sub {
+			$regs->{ip} = $regs->{$reg_ids[$_[1]]};
+		}
+	},{ #0x16
+		name => "jmp to stack",
+		opt => sub {
+			$regs->{ip} = $stack[$regs->{sp}];
+		}
 	}
 );
 

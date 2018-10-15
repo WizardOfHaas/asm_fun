@@ -289,13 +289,78 @@ my @opts = (
 				$regs->{ip} += 4;
 			}
 		}
+	},{ #0x23
+		name => "jo to const",
+		opt => sub {
+			if($regs->{flags} & $flag_masks->{overflow}){
+				$regs->{ip} = $_[1];
+			}else{
+				$regs->{ip} += 4;
+			}
+		}
+	},{ #0x24
+		name => "jo to reg",
+		opt => sub {
+			if($regs->{flags} & $flag_masks->{overflow}){
+				$regs->{ip} = $regs->{$reg_ids[$_[1]]};;
+			}else{
+				$regs->{ip} += 4;
+			}
+		}
+	},{ #0x25
+		name => "jo to stack",
+		opt => sub {
+			if($regs->{flags} & $flag_masks->{overflow}){
+				$regs->{ip} = $stack[$regs->{sp}];
+			}else{
+				$regs->{ip} += 4;
+			}
+		}
+	},{ #0x26
+		name => "jerr to const",
+		opt => sub {
+			if($regs->{flags} & $flag_masks->{error}){
+				$regs->{ip} = $_[1];
+			}else{
+				$regs->{ip} += 4;
+			}
+		}
+	},{ #0x27
+		name => "jerr to reg",
+		opt => sub {
+			if($regs->{flags} & $flag_masks->{error}){
+				$regs->{ip} = $regs->{$reg_ids[$_[1]]};;
+			}else{
+				$regs->{ip} += 4;
+			}
+		}
+	},{ #0x28
+		name => "jerr to stack",
+		opt => sub {
+			if($regs->{flags} & $flag_masks->{error}){
+				$regs->{ip} = $stack[$regs->{sp}];
+			}else{
+				$regs->{ip} += 4;
+			}
+		}
+	},{ #0x29
+		name => "clf",
+		opt => sub {
+			$regs->{flags} = 0b00000;
+			$regs->{ip} += 4;
+		}
+	},{ #0x2A
+		name => "stf",
+		opt => sub {
+			$regs->{flags} = 0b11111;
+			$regs->{ip} += 4;
+		}
 	}
 );
 
 my @code = (
-	0x08, 0x02, 0x01, 0x00,	#mov r0, 0x04
-	0x10, 0x02, 0x0A, 0x00,	#cmp r0, ##
-	0x1A, 0x00, 0x00, 0x00, #je 0x10
+	0x2A, 0x00, 0x00, 0x00,	#stf
+	0x29, 0x00, 0x00, 0x00,	#clf
 	0x00, 0x00, 0x00, 0x00	#hlt
 );
 

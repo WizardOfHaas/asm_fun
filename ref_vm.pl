@@ -181,16 +181,121 @@ my @opts = (
 		opt => sub {
 			$regs->{ip} = $stack[$regs->{sp}];
 		}
+	},{ #0x17
+		name => "je to const",
+		opt => sub {
+			if($regs->{flags} & $flag_masks->{equal}){
+				$regs->{ip} = $_[1];
+			}else{
+				$regs->{ip} += 4;
+			}
+		}
+	},{ #0x18
+		name => "je to reg",
+		opt => sub {
+			if($regs->{flags} & $flag_masks->{equal}){
+				$regs->{ip} = $regs->{$reg_ids[$_[1]]};;
+			}else{
+				$regs->{ip} += 4;
+			}
+		}
+	},{ #0x19
+		name => "je to stack",
+		opt => sub {
+			if($regs->{flags} & $flag_masks->{equal}){
+				$regs->{ip} = $stack[$regs->{sp}];
+			}else{
+				$regs->{ip} += 4;
+			}
+		}
+	},{ #0x1A
+		name => "jne to const",
+		opt => sub {
+			if(!($regs->{flags} & $flag_masks->{equal})){
+				$regs->{ip} = $_[1];
+			}else{
+				$regs->{ip} += 4;
+			}
+		}
+	},{ #0x1B
+		name => "jne to reg",
+		opt => sub {
+			if(!($regs->{flags} & $flag_masks->{equal})){
+				$regs->{ip} = $regs->{$reg_ids[$_[1]]};;
+			}else{
+				$regs->{ip} += 4;
+			}
+		}
+	},{ #0x1C
+		name => "jne to stack",
+		opt => sub {
+			if(!($regs->{flags} & $flag_masks->{equal})){
+				$regs->{ip} = $stack[$regs->{sp}];
+			}else{
+				$regs->{ip} += 4;
+			}
+		}
+	},{ #0x1D
+		name => "jg to const",
+		opt => sub {
+			if($regs->{flags} & $flag_masks->{greater}){
+				$regs->{ip} = $_[1];
+			}else{
+				$regs->{ip} += 4;
+			}
+		}
+	},{ #0x1E
+		name => "jg to reg",
+		opt => sub {
+			if($regs->{flags} & $flag_masks->{greater}){
+				$regs->{ip} = $regs->{$reg_ids[$_[1]]};;
+			}else{
+				$regs->{ip} += 4;
+			}
+		}
+	},{ #0x1F
+		name => "jg to stack",
+		opt => sub {
+			if($regs->{flags} & $flag_masks->{greater}){
+				$regs->{ip} = $stack[$regs->{sp}];
+			}else{
+				$regs->{ip} += 4;
+			}
+		}
+	},{ #0x20
+		name => "jl to const",
+		opt => sub {
+			if(!($regs->{flags} & $flag_masks->{greater})){
+				$regs->{ip} = $_[1];
+			}else{
+				$regs->{ip} += 4;
+			}
+		}
+	},{ #0x21
+		name => "jl to reg",
+		opt => sub {
+			if(!($regs->{flags} & $flag_masks->{greater})){
+				$regs->{ip} = $regs->{$reg_ids[$_[1]]};;
+			}else{
+				$regs->{ip} += 4;
+			}
+		}
+	},{ #0x22
+		name => "jl to stack",
+		opt => sub {
+			if(!($regs->{flags} & $flag_masks->{greater})){
+				$regs->{ip} = $stack[$regs->{sp}];
+			}else{
+				$regs->{ip} += 4;
+			}
+		}
 	}
 );
 
 my @code = (
-	0x05, 0x02, 0x04, 0x00,	#mov r0, 0x04
-	0x11, 0x02, 0x03, 0x00,	#cmp r0, r1
-	0x10, 0x02, 0x05, 0x00,	#cmp r0, 0x05
-	0x05, 0x01, 0x20, 0x00,	#mov sp, 0x20
-	0x04, 0xFF, 0x00, 0x00,	#mov r0
-	0x13, 0xFE, 0x00, 0x00,	#cmp 0x01
+	0x08, 0x02, 0x01, 0x00,	#mov r0, 0x04
+	0x10, 0x02, 0x0A, 0x00,	#cmp r0, ##
+	0x1A, 0x00, 0x00, 0x00, #je 0x10
 	0x00, 0x00, 0x00, 0x00	#hlt
 );
 

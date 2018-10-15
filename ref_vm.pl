@@ -355,6 +355,22 @@ my @opts = (
 			$regs->{flags} = 0b11111;
 			$regs->{ip} += 4;
 		}
+	},{ #0x2B
+		name => "rd const io to reg"
+	},{ #0x2C
+		name => "rd reg io to reg"
+	},{ #0x2D
+		name => "rd stack io to reg"
+	},{ #0x2E
+		name => "rd const io to stack"
+	},{ #0x2F
+		name => "wr const io to reg"
+	},{ #0x30
+		name => "wr reg io to reg"
+	},{ #0x31
+		name => "wr stack io to reg"
+	},{ #0x32
+		name => "wr const io to stack"
 	}
 );
 

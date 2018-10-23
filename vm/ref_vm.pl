@@ -130,7 +130,8 @@ my @opts = (
 			$stack[$regs->{sp}] -= $regs->{$reg_ids[$_[1]]};
 			$regs->{ip} += 4;
 		}
-	},{	#0x10
+	},{ #0x10
+	},{	#0x11
 		name => "cmp reg to const",
 		opt => sub {
 			$regs->{flags} = 0;
@@ -139,7 +140,7 @@ my @opts = (
 			$regs->{flags} |= $flag_masks->{equal} if $regs->{$reg_ids[$_[1]]} == $_[2];
 			$regs->{ip} += 4;
 		}
-	},{	#0x11
+	},{	#0x12
 		name => "cmp reg to reg",
 		opt => sub {
 			$regs->{flags} = 0;
@@ -148,7 +149,7 @@ my @opts = (
 			$regs->{flags} |= $flag_masks->{equal} if $regs->{$reg_ids[$_[1]]} == $regs->{$reg_ids[$_[2]]};
 			$regs->{ip} += 4;
 		}
-	},{	#0x12
+	},{	#0x13
 		name => "cmp reg to stack",
 		opt => sub {
 			$regs->{flags} = 0;
@@ -157,7 +158,7 @@ my @opts = (
 			$regs->{flags} |= $flag_masks->{equal} if $stack[$regs->{sp}] == $regs->{$reg_ids[$_[1]]};
 			$regs->{ip} += 4;
 		}
-	},{	#0x13
+	},{	#0x14
 		name => "cmp const to stack",
 		opt => sub {
 			$regs->{flags} = 0;
@@ -166,22 +167,22 @@ my @opts = (
 			$regs->{flags} |= $flag_masks->{equal} if $stack[$regs->{sp}] == $_[1];
 			$regs->{ip} += 4;
 		}
-	},{ #0x14
+	},{ #0x15
 		name => "jmp to const",
 		opt => sub {
 			$regs->{ip} = $_[1];
 		}
-	},{ #0x15
+	},{ #0x16
 		name => "jmp to reg",
 		opt => sub {
 			$regs->{ip} = $regs->{$reg_ids[$_[1]]};
 		}
-	},{ #0x16
+	},{ #0x17
 		name => "jmp to stack",
 		opt => sub {
 			$regs->{ip} = $stack[$regs->{sp}];
 		}
-	},{ #0x17
+	},{ #0x18
 		name => "je to const",
 		opt => sub {
 			if($regs->{flags} & $flag_masks->{equal}){
@@ -190,7 +191,7 @@ my @opts = (
 				$regs->{ip} += 4;
 			}
 		}
-	},{ #0x18
+	},{ #0x19
 		name => "je to reg",
 		opt => sub {
 			if($regs->{flags} & $flag_masks->{equal}){
@@ -199,7 +200,7 @@ my @opts = (
 				$regs->{ip} += 4;
 			}
 		}
-	},{ #0x19
+	},{ #0x1A
 		name => "je to stack",
 		opt => sub {
 			if($regs->{flags} & $flag_masks->{equal}){
@@ -208,7 +209,7 @@ my @opts = (
 				$regs->{ip} += 4;
 			}
 		}
-	},{ #0x1A
+	},{ #0x1B
 		name => "jne to const",
 		opt => sub {
 			if(!($regs->{flags} & $flag_masks->{equal})){
@@ -217,7 +218,7 @@ my @opts = (
 				$regs->{ip} += 4;
 			}
 		}
-	},{ #0x1B
+	},{ #0x1C
 		name => "jne to reg",
 		opt => sub {
 			if(!($regs->{flags} & $flag_masks->{equal})){
@@ -226,7 +227,7 @@ my @opts = (
 				$regs->{ip} += 4;
 			}
 		}
-	},{ #0x1C
+	},{ #0x1D
 		name => "jne to stack",
 		opt => sub {
 			if(!($regs->{flags} & $flag_masks->{equal})){
@@ -235,7 +236,7 @@ my @opts = (
 				$regs->{ip} += 4;
 			}
 		}
-	},{ #0x1D
+	},{ #0x1E
 		name => "jg to const",
 		opt => sub {
 			if($regs->{flags} & $flag_masks->{greater}){
@@ -244,7 +245,7 @@ my @opts = (
 				$regs->{ip} += 4;
 			}
 		}
-	},{ #0x1E
+	},{ #0x1F
 		name => "jg to reg",
 		opt => sub {
 			if($regs->{flags} & $flag_masks->{greater}){
@@ -253,7 +254,7 @@ my @opts = (
 				$regs->{ip} += 4;
 			}
 		}
-	},{ #0x1F
+	},{ #0x20
 		name => "jg to stack",
 		opt => sub {
 			if($regs->{flags} & $flag_masks->{greater}){
@@ -262,7 +263,7 @@ my @opts = (
 				$regs->{ip} += 4;
 			}
 		}
-	},{ #0x20
+	},{ #0x21
 		name => "jl to const",
 		opt => sub {
 			if(!($regs->{flags} & $flag_masks->{greater})){
@@ -271,7 +272,7 @@ my @opts = (
 				$regs->{ip} += 4;
 			}
 		}
-	},{ #0x21
+	},{ #0x22
 		name => "jl to reg",
 		opt => sub {
 			if(!($regs->{flags} & $flag_masks->{greater})){
@@ -280,7 +281,7 @@ my @opts = (
 				$regs->{ip} += 4;
 			}
 		}
-	},{ #0x22
+	},{ #0x23
 		name => "jl to stack",
 		opt => sub {
 			if(!($regs->{flags} & $flag_masks->{greater})){
@@ -289,7 +290,7 @@ my @opts = (
 				$regs->{ip} += 4;
 			}
 		}
-	},{ #0x23
+	},{ #0x24
 		name => "jo to const",
 		opt => sub {
 			if($regs->{flags} & $flag_masks->{overflow}){
@@ -298,7 +299,7 @@ my @opts = (
 				$regs->{ip} += 4;
 			}
 		}
-	},{ #0x24
+	},{ #0x25
 		name => "jo to reg",
 		opt => sub {
 			if($regs->{flags} & $flag_masks->{overflow}){
@@ -307,7 +308,7 @@ my @opts = (
 				$regs->{ip} += 4;
 			}
 		}
-	},{ #0x25
+	},{ #0x26
 		name => "jo to stack",
 		opt => sub {
 			if($regs->{flags} & $flag_masks->{overflow}){
@@ -316,7 +317,7 @@ my @opts = (
 				$regs->{ip} += 4;
 			}
 		}
-	},{ #0x26
+	},{ #0x27
 		name => "jerr to const",
 		opt => sub {
 			if($regs->{flags} & $flag_masks->{error}){
@@ -325,7 +326,7 @@ my @opts = (
 				$regs->{ip} += 4;
 			}
 		}
-	},{ #0x27
+	},{ #0x28
 		name => "jerr to reg",
 		opt => sub {
 			if($regs->{flags} & $flag_masks->{error}){
@@ -334,7 +335,7 @@ my @opts = (
 				$regs->{ip} += 4;
 			}
 		}
-	},{ #0x28
+	},{ #0x29
 		name => "jerr to stack",
 		opt => sub {
 			if($regs->{flags} & $flag_masks->{error}){
@@ -343,42 +344,46 @@ my @opts = (
 				$regs->{ip} += 4;
 			}
 		}
-	},{ #0x29
+	},{ #0x2A
 		name => "clf",
 		opt => sub {
 			$regs->{flags} = 0b00000;
 			$regs->{ip} += 4;
 		}
-	},{ #0x2A
+	},{ #0x2B
 		name => "stf",
 		opt => sub {
 			$regs->{flags} = 0b11111;
 			$regs->{ip} += 4;
 		}
-	},{ #0x2B
-		name => "rd const io to reg"
 	},{ #0x2C
-		name => "rd reg io to reg"
+		name => "rd const io to reg"
 	},{ #0x2D
-		name => "rd stack io to reg"
+		name => "rd reg io to reg"
 	},{ #0x2E
-		name => "rd const io to stack"
+		name => "rd stack io to reg"
 	},{ #0x2F
-		name => "wr const io to reg"
+		name => "rd const io to stack"
 	},{ #0x30
-		name => "wr reg io to reg"
+		name => "wr const io to reg"
 	},{ #0x31
-		name => "wr stack io to reg"
+		name => "wr reg io to reg"
 	},{ #0x32
+		name => "wr stack io to reg"
+	},{ #0x33
 		name => "wr const io to stack"
 	}
 );
 
-my @code = (
-	0x2A, 0x00, 0x00, 0x00,	#stf
-	0x29, 0x00, 0x00, 0x00,	#clf
-	0x00, 0x00, 0x00, 0x00	#hlt
-);
+my @code;
+
+open my $in, "<:raw", $ARGV[0];
+binmode $in;
+my $b;
+
+while(read $in, $b, 1){
+	push(@code, unpack 'c', $b);
+}
 
 #Load code to stack
 @stack[0 .. scalar @code - 1] = @code;

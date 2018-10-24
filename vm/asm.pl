@@ -14,6 +14,7 @@ my $regs = {
 
 my $opts = {
 	"hlt"				=> 0,
+
 	"push const" 		=> 1,
 	"push reg" 			=> 2,
 
@@ -39,33 +40,36 @@ my $opts = {
 	"cmp reg"			=> 19,
 	"cmp const"			=> 20,
 
-	"jmp reg"			=> 21,
-	"jmp const"			=> 22,
+	"jmp const"			=> 21,
+	"jmp reg"			=> 22,
 	"jmp"				=> 23,
 
-	"je reg"			=> 25,
-	"je const"			=> 26,
+	"je const"			=> 25,
+	"je reg"			=> 26,
 	"je"				=> 27,
 
-	"jne reg"			=> 29,
-	"jne const"			=> 30,
+	"jne const"			=> 29,
+	"jne reg"			=> 30,
 	"jne"				=> 31,
 
-	"jg reg"			=> 33,
-	"jg const"			=> 34,
+	"jg const"			=> 33,
+	"jg reg"			=> 34,
 	"jg"				=> 35,
 
-	"jl reg"			=> 37,
-	"jl const"			=> 38,
+	"jl const"			=> 37,
+	"jl reg"			=> 38,
 	"jl"				=> 39,
 
-	"jo reg"			=> 41,
-	"jo const"			=> 42,
+	"jo const"			=> 41,
+	"jo reg"			=> 42,
 	"jo"				=> 43,
 
-	"jerr reg"			=> 45,
-	"jerr const"		=> 46,
+	"jerr const"		=> 45,
+	"jerr reg"			=> 46,
 	"jerr"				=> 47,
+
+	"clf"				=> 49,
+	"stf"				=> 50,
 
 	"rd reg const"		=> 52,
 	"rd reg reg"		=> 53,
@@ -120,11 +124,11 @@ while(<$fh>){
 
 	if(defined $tokens[1] && $tokens[1] =~ m/(ip|sp|r0|r1)/){
 		print $regs->{$tokens[1]}."\t";
-		$mode .= "reg";
+		$mode .= " reg";
 		$op[1] = $regs->{$tokens[1]};
 	}elsif(defined $tokens[1]){
 		print $tokens[1]."\t";
-		$mode .= "const";
+		$mode .= " const";
 		$op[1] = convert_const($tokens[1]);
 	}
 
@@ -138,8 +142,13 @@ while(<$fh>){
 		$op[2] = convert_const($tokens[2]);
 	}
 
-	my $op_id = $tokens[0]." ".$mode;
-	$op[0] = $opts->{$op_id};
+	my $op_id = $tokens[0].$mode;
+
+	if(defined $opts->{$op_id}){
+		$op[0] = $opts->{$op_id};
+	}else{
+		die "Invalid operation:\n\t$op_id\n";
+	}
 
 	print "\t\t".$op_id."\n";
 

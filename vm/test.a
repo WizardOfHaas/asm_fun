@@ -1,4 +1,5 @@
 start:
+	mov r1, 'A'
 	mov r0, 10
 loop:
 	sub r0, 1
@@ -6,3 +7,5 @@ loop:
 	jne loop
 end:
 	hlt
+
+b 'H', 'E', 'L', 'L', 'L', 'O', 0

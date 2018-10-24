@@ -54,10 +54,28 @@ my $opts = {
 	"jg reg"			=> 33,
 	"jg const"			=> 34,
 	"jg"				=> 35,
-	
+
 	"jl reg"			=> 37,
 	"jl const"			=> 38,
-	"jl"				=> 39
+	"jl"				=> 39,
+
+	"jo reg"			=> 41,
+	"jo const"			=> 42,
+	"jo"				=> 43,
+
+	"jerr reg"			=> 45,
+	"jerr const"		=> 46,
+	"jerr"				=> 47,
+
+	"rd reg const"		=> 52,
+	"rd reg reg"		=> 53,
+	"rd reg"			=> 54,
+	"rd const"			=> 55,
+
+	"wr reg const"		=> 57,
+	"wr reg reg"		=> 58,
+	"wr reg"			=> 59,
+	"wr const"			=> 60,
 };
 
 open my $fh, "<", $ARGV[0];
@@ -83,6 +101,18 @@ while(<$fh>){
 		next;
 	}
 
+	if($tokens[0] eq 'b'){
+		#Do define bytes
+		foreach my $d(@tokens[1 .. scalar @tokens]){
+			if(defined $d){
+				push(@code, convert_const($d));
+				$address++;
+			}
+		}
+
+		next;
+	}
+
 	my $mode = "";
 	my @op = (0, 0, 0, 0);
 
@@ -95,7 +125,7 @@ while(<$fh>){
 	}elsif(defined $tokens[1]){
 		print $tokens[1]."\t";
 		$mode .= "const";
-		$op[1] = $tokens[1];
+		$op[1] = convert_const($tokens[1]);
 	}
 
 	if(defined $tokens[2] && $tokens[2] =~ m/(ip|sp|r0|r1)/){
@@ -105,7 +135,7 @@ while(<$fh>){
 	}elsif(defined $tokens[2]){
 		print $tokens[2];
 		$mode .= " const";
-		$op[2] = $tokens[2];
+		$op[2] = convert_const($tokens[2]);
 	}
 
 	my $op_id = $tokens[0]." ".$mode;
@@ -125,4 +155,14 @@ foreach my $byte(@code){
 	}
 
 	print $out pack('C', $byte) if defined $byte;
+}
+
+sub convert_const{
+	my ($c) = @_;
+
+	if($c =~ m/['"](.+)['"]/){
+		$c = ord($1);
+	}
+
+	return $c;
 }

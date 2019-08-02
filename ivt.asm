@@ -13,8 +13,8 @@ load_isr_stubs:
 	db 0x05		;Bound Range Exceeded
 	dw isr_5
 
-	db 0x06		;Invalid Op-code
-	dw isr_6
+	;db 0x06		;Invalid Op-code
+	;dw isr_6
 
 	db 0x07		;Device not Available
 	dw isr_7

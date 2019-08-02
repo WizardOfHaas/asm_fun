@@ -15,4 +15,4 @@ end:
 	hlt
 
 msg:
-	b 'H', 'E', 'L', 'L', 'L', 'O', 0
+	d 'H' 'E' 'L' 'L' 'L' 'O' 0

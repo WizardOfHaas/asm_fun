@@ -99,6 +99,15 @@ while(<$fh>){
 
 	next if(scalar @tokens < 1 || $tokens[0] =~ m/^#/);
 
+	if($tokens[0] eq 'd'){
+		foreach my $token(@tokens[1 .. -1]){
+			push(@code, convert_const($token));
+			$address++;
+		}
+
+		next;
+	}
+
 	if($tokens[0] =~ m/:$/){ #Do we have a label?
 		$tokens[0] =~ s/://;
 		$labels->{$tokens[0]} = $address; #Store label address
@@ -144,7 +153,7 @@ while(<$fh>){
 
 	my $op_id = $tokens[0].$mode;
 
-	if(defined $opts->{$op_id}){
+	if(defined $opts->{$op_id} || $op_id =~ 'd const'){
 		$op[0] = $opts->{$op_id};
 	}else{
 		die "Invalid operation:\n\t$op_id\n";
@@ -157,7 +166,7 @@ while(<$fh>){
 }
 
 foreach my $byte(@code){
-	#Apply lasbels
+	#Apply labels
 	if(defined $byte && $byte =~ m/[a-z]/){
 		die "$byte not defined" unless defined $labels->{$byte};
 		$byte = $labels->{$byte};

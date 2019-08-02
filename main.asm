@@ -42,7 +42,6 @@ start:
 	int 0x13
 	call print_regs
 
-
 	mov ax, cs
 	mov es, ax
 
